@@ -1,0 +1,178 @@
+{% extends "base_dashboard.html" %}
+{% block title %}New detection{% endblock %}
+{% block page_heading %}New chest X-ray detection{% endblock %}
+{% block content %}
+<p style="color:#94a3b8;font-size:.9rem;max-width:40rem;margin-bottom:1.25rem;line-height:1.5">
+    Enter patient demographics, upload a frontal chest X-ray, then run <strong>DenseNet121</strong> feature extraction and <strong>SVM</strong> classification. Grad-CAM highlights regions the CNN emphasized.
+</p>
+
+{% if model_error %}
+<div class="auth-error" role="alert">{{ model_error }}</div>
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data" id="detectForm" class="glass-card" style="padding:1.5rem;margin-bottom:1.5rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;">
+    <h2 style="font-size:1.1rem;margin-bottom:1rem;color:#f1f5f9;">Patient &amp; imaging</h2>
+    <div class="form-grid-detection">
+        <div>
+            <label class="sr-only" for="patient_name">Patient name</label>
+            <input id="patient_name" name="patient_name" placeholder="Full name *" required value="{{ form_vals.get('patient_name','') }}">
+        </div>
+        <div>
+            <label class="sr-only" for="age">Age</label>
+            <input id="age" name="age" type="number" min="0" max="130" placeholder="Age" value="{{ form_vals.get('age','') }}">
+        </div>
+        <div>
+            <label class="sr-only" for="gender">Gender</label>
+            <select id="gender" name="gender">
+                <option value="">Gender</option>
+                <option value="Male" {% if form_vals.get('gender')=='Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if form_vals.get('gender')=='Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if form_vals.get('gender')=='Other' %}selected{% endif %}>Other</option>
+                <option value="Prefer not to say" {% if form_vals.get('gender')=='Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+            </select>
+        </div>
+        <div>
+            <label class="sr-only" for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" placeholder="Phone" value="{{ form_vals.get('phone','') }}">
+        </div>
+    </div>
+    <div style="margin-bottom:14px;">
+        <label class="sr-only" for="address">Address</label>
+        <textarea id="address" name="address" placeholder="Address (optional)">{{ form_vals.get('address','') }}</textarea>
+    </div>
+
+    <label class="file-drop" id="fileDrop" style="border-color:rgba(56,189,248,0.35);">
+        <div class="file-drop-icon">📎</div>
+        <div class="file-drop-title">X-ray image (PNG / JPG)</div>
+        <input type="file" name="image" id="imageInput" accept="image/*" required aria-label="X-ray file">
+    </label>
+    <div class="file-name" id="fileName"></div>
+    <div class="preview-box" id="previewBox" style="margin-top:12px;min-height:160px;">
+        <span class="preview-placeholder" id="previewPlaceholder">Preview after file selection</span>
+        <img id="previewImage" alt="Preview" class="">
+    </div>
+
+    <button type="submit" class="btn-primary-dash" style="width:100%;margin-top:16px;padding:14px;font-size:1rem;">Run AI prediction</button>
+</form>
+
+{% if saved_patient_id %}
+<p style="margin-bottom:1rem;">
+    <a href="{{ url_for('patient_detail', patient_id=saved_patient_id) }}" class="btn-primary-dash" style="display:inline-block;text-decoration:none;">Open saved patient record</a>
+</p>
+{% endif %}
+
+{% if result %}
+<section id="results" class="results-section" style="margin-top:8px;">
+    <div class="glass-card" style="padding:1.5rem;">
+        <div class="results-header" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;">
+            <div>
+                <h2 style="font-size:1.2rem;color:#f1f5f9;">Result — {{ form_vals.get('patient_name','Patient') }}</h2>
+                <p style="color:#94a3b8;font-size:.88rem;">{{ img_name }}</p>
+            </div>
+            <div class="result-pill {% if result == 'PNEUMONIA' %}pneumonia{% else %}normal{% endif %}">
+                {{ result }}
+            </div>
+        </div>
+        <div class="metrics-row" style="margin-top:1rem;">
+            <div class="metric-card">
+                <div class="metric-label">Confidence</div>
+                <div class="metric-value accent">{{ confidence }}%</div>
+            </div>
+        </div>
+        {% if description %}
+        <div class="detail-panel" style="margin-top:1rem;">
+            <h3>Summary</h3>
+            <p>{{ description.strip() }}</p>
+        </div>
+        {% endif %}
+        {% if suggestions %}
+        <div class="detail-panel" style="margin-top:1rem;">
+            <h3>Suggestions</h3>
+            <ul class="suggestion-list">
+                {% for item in suggestions %}
+                <li><span class="si">{{ loop.index }}</span><span>{{ item }}</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="share-dock" style="margin-top:1rem;">
+            <h3>Share</h3>
+            <div class="share-actions">
+                <button type="button" class="btn-share" id="btnCopy">Copy summary</button>
+                <button type="button" class="btn-share whatsapp" id="btnWa">WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    {% if gradcam_path and original_image %}
+    <div class="image-compare-grid" style="margin-top:1rem;">
+        <div class="xray-frame">
+            <div class="xray-frame-header"><span class="xray-frame-title">Original</span></div>
+            <img src="{{ url_for('static', filename=original_image) }}" alt="Original">
+        </div>
+        <div class="xray-frame">
+            <div class="xray-frame-header"><span class="xray-frame-title">Grad-CAM</span></div>
+            <img src="{{ url_for('static', filename=gradcam_path) }}" alt="Grad-CAM">
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<script type="application/json" id="sharePayload">{{ {
+  'patient': form_vals.get('patient_name',''),
+  'result': result,
+  'confidence': confidence
+} | tojson }}</script>
+<script>
+(function(){
+  var p = document.getElementById('sharePayload');
+  if(!p) return;
+  var d = JSON.parse(p.textContent);
+  document.getElementById('btnCopy')?.addEventListener('click', function(){
+    var t = 'Patient: ' + d.patient + '\\nResult: ' + d.result + ' (' + d.confidence + '%)\\nEducational AI only — not a diagnosis.';
+    navigator.clipboard.writeText(t).then(function(){
+      var toast = document.getElementById('globalToast');
+      if(toast){ toast.style.opacity='1'; toast.textContent='Copied.'; setTimeout(function(){ toast.style.opacity='0'; }, 2000); }
+    });
+  });
+  document.getElementById('btnWa')?.addEventListener('click', function(){
+    var t = 'Chest X-ray AI\\nPatient: ' + d.patient + '\\n' + d.result + ' (' + d.confidence + '%)\\nNot a medical diagnosis.';
+    window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+  });
+})();
+</script>
+{% endif %}
+
+<div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+    <div class="loader"></div>
+    <p>Running model &amp; Grad-CAM…</p>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+  var form = document.getElementById('detectForm');
+  var input = document.getElementById('imageInput');
+  var prev = document.getElementById('previewImage');
+  var ph = document.getElementById('previewPlaceholder');
+  var overlay = document.getElementById('loadingOverlay');
+  if(input && prev){
+    input.addEventListener('change', function(){
+      var f = input.files && input.files[0];
+      document.getElementById('fileName').textContent = f ? f.name : '';
+      if(!f){ prev.classList.remove('is-visible'); if(ph) ph.classList.remove('is-hidden'); return; }
+      var r = new FileReader();
+      r.onload = function(e){ prev.src = e.target.result; prev.classList.add('is-visible'); if(ph) ph.classList.add('is-hidden'); };
+      r.readAsDataURL(f);
+    });
+  }
+  if(form && overlay){
+    form.addEventListener('submit', function(){ overlay.classList.add('is-visible'); overlay.setAttribute('aria-hidden','false'); });
+  }
+  {% if result %}
+  requestAnimationFrame(function(){ document.getElementById('results')?.scrollIntoView({ behavior:'smooth', block:'start' }); });
+  {% endif %}
+})();
+</script>
+{% endblock %}

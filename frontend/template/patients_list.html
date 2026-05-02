@@ -1,0 +1,64 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ page_title or 'Patient records' }}{% endblock %}
+{% block page_heading %}{{ page_title or 'Patient records' }}{% endblock %}
+{% block content %}
+
+<form class="filters-bar" method="get" action="{{ request.path }}">
+    <input type="search" name="q" placeholder="Search by name…" value="{{ q or '' }}" aria-label="Search patients">
+    <select name="result" aria-label="Filter by result">
+        <option value="">All results</option>
+        <option value="NORMAL" {% if result_filter == 'NORMAL' %}selected{% endif %}>Normal</option>
+        <option value="PNEUMONIA" {% if result_filter == 'PNEUMONIA' %}selected{% endif %}>Pneumonia</option>
+    </select>
+    <button type="submit" class="btn-primary-dash">Apply</button>
+</form>
+
+<div class="table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Result</th>
+                <th>Confidence</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in patients %}
+            <tr>
+                <td>{{ row.patient_name }}</td>
+                <td>{{ row.age or '—' }}</td>
+                <td>{{ row.gender or '—' }}</td>
+                <td>
+                    <span class="badge {% if row.result == 'PNEUMONIA' %}badge-warn{% else %}badge-ok{% endif %}">{{ row.result }}</span>
+                </td>
+                <td>{{ '%.1f'|format(row.confidence) }}%</td>
+                <td>{{ row.prediction_date[:19]|replace('T',' ') if row.prediction_date else '—' }}</td>
+                <td>
+                    <a href="{{ url_for('patient_detail', patient_id=row.id) }}" style="color:#7dd3fc;font-weight:600;">View</a>
+                    ·
+                    <a href="{{ url_for('download_patient_pdf', patient_id=row.id) }}" style="color:#94a3b8;">PDF</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center;color:#64748b;padding:2rem;">No records yet. Run a <a href="{{ url_for('detection') }}" style="color:#7dd3fc;">new detection</a>.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="{{ url_for(list_endpoint|default('patients_list'), page=page-1, q=q, result=result_filter) }}">← Prev</a>
+    {% endif %}
+    <span>Page {{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for(list_endpoint|default('patients_list'), page=page+1, q=q, result=result_filter) }}">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

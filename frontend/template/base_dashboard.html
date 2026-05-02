@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} — Pneumonia AI Lab</title>
+    <meta name="theme-color" content="#0c1222">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="dash-sidebar" aria-label="Main navigation">
+            <div class="dash-brand">
+                <div class="dash-brand-title">Pneumonia AI Lab</div>
+                <div class="dash-brand-sub">DenseNet121 · SVM · Grad-CAM</div>
+            </div>
+            <nav class="dash-nav">
+                <a href="{{ url_for('dashboard') }}" class="{% if nav == 'dashboard' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">📊</span> Dashboard
+                </a>
+                <a href="{{ url_for('detection') }}" class="{% if nav == 'detection' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">🔬</span> New detection
+                </a>
+                <a href="{{ url_for('patients_list') }}" class="{% if nav == 'patients' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">📋</span> Patient records
+                </a>
+                <a href="{{ url_for('reports_page') }}" class="{% if nav == 'reports' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">📄</span> Reports
+                </a>
+                <a href="{{ url_for('assistant_page') }}" class="{% if nav == 'chat' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">🤖</span> AI assistant
+                </a>
+                <a href="{{ url_for('settings_page') }}" class="{% if nav == 'settings' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">⚙️</span> Settings
+                </a>
+            </nav>
+        </aside>
+        <div class="dash-main">
+            <header class="dash-topbar">
+                <h1>{% block page_heading %}Dashboard{% endblock %}</h1>
+                <div class="dash-topbar-actions">
+                    <div class="dash-topbar-cluster" role="group" aria-label="Account">
+                        <span class="dash-user">Signed in as <strong>{{ session.user }}</strong></span>
+                        <span class="dash-topbar-divider" aria-hidden="true"></span>
+                        <button type="button" class="btn-icon" id="themeToggle" title="Toggle theme" aria-label="Toggle light and dark theme">◐</button>
+                        <span class="dash-topbar-divider" aria-hidden="true"></span>
+                        <a href="{{ url_for('logout') }}" class="btn-logout">Log out</a>
+                    </div>
+                </div>
+            </header>
+            <main class="dash-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <div class="toast" id="globalToast" role="status" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:12px;background:rgba(15,23,42,.95);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;font-size:.9rem;font-weight:600;z-index:10000;opacity:0;pointer-events:none;transition:opacity .3s;"></div>
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,4 +1,5 @@
 # --- Requested: env, caches, IDE, bytecode ---
+.env
 pneumonia_env/
 __pycache__/
 .vscode/
@@ -29,6 +30,7 @@ Thumbs.db
 
 # Local app data (generated at runtime)
 users.db
+database/*.db
 frontend/static/uploads/
 
 # Large ML artifacts (re-train or use Git LFS if you need them in repo)

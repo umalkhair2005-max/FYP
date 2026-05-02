@@ -1,0 +1,100 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_heading %}Overview{% endblock %}
+{% block content %}
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-card-label">Total patients</div>
+        <div class="stat-card-value">{{ stats.total_patients }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-label">Pneumonia cases</div>
+        <div class="stat-card-value">{{ stats.pneumonia_cases }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-label">Normal cases</div>
+        <div class="stat-card-value">{{ stats.normal_cases }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-label">Reports generated</div>
+        <div class="stat-card-value">{{ stats.total_reports }}</div>
+    </div>
+</div>
+
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Normal vs pneumonia</h3>
+        <canvas id="chartPie" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>Detections by day (recent)</h3>
+        <canvas id="chartLine" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>Case distribution</h3>
+        <canvas id="chartBar" height="200"></canvas>
+    </div>
+</div>
+
+<p style="color:#64748b;font-size:.88rem;max-width:42rem;line-height:1.5">
+    This dashboard summarizes cases stored locally from your <strong>New detection</strong> runs.
+    Charts use Chart.js; data is not sent to any external service except when you use the optional Gemini chatbot.
+</p>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var pieN = {{ stats.normal_cases|int }};
+  var pieP = {{ stats.pneumonia_cases|int }};
+  var lineLabels = {{ line_labels|tojson }};
+  var lineData = {{ line_values|tojson }};
+
+  new Chart(document.getElementById('chartPie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Normal', 'Pneumonia'],
+      datasets: [{ data: [pieN, pieP], backgroundColor: ['#34d399', '#fb7185'], borderWidth: 0 }]
+    },
+    options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, cutout: '58%' }
+  });
+
+  new Chart(document.getElementById('chartLine'), {
+    type: 'line',
+    data: {
+      labels: lineLabels,
+      datasets: [{
+        label: 'Detections',
+        data: lineData,
+        borderColor: '#38bdf8',
+        backgroundColor: 'rgba(56,189,248,0.15)',
+        fill: true,
+        tension: 0.35
+      }]
+    },
+    options: {
+      scales: {
+        x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: { color: '#64748b', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  new Chart(document.getElementById('chartBar'), {
+    type: 'bar',
+    data: {
+      labels: ['Normal', 'Pneumonia'],
+      datasets: [{ data: [pieN, pieP], backgroundColor: ['#34d399', '#fb7185'], borderRadius: 8 }]
+    },
+    options: {
+      scales: {
+        x: { ticks: { color: '#64748b' }, grid: { display: false } },
+        y: { ticks: { color: '#64748b', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+})();
+</script>
+{% endblock %}

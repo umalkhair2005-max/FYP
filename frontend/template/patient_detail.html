@@ -1,0 +1,87 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ patient.patient_name }}{% endblock %}
+{% block page_heading %}Patient detail{% endblock %}
+{% block content %}
+
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;align-items:center;">
+    <a href="{{ url_for('patients_list') }}" style="color:#94a3b8;font-size:.9rem;">← Back to records</a>
+    <a href="{{ url_for('download_patient_pdf', patient_id=patient.id) }}" class="btn-primary-dash" style="text-decoration:none;display:inline-block;">Download PDF</a>
+    <button type="button" class="btn-primary-dash" id="btnCopyDetail" style="background:rgba(255,255,255,0.1);color:#e2e8f0;">Copy summary</button>
+    <button type="button" class="btn-primary-dash" id="btnWaDetail" style="background:rgba(74,222,128,0.2);color:#86efac;">WhatsApp</button>
+    <form method="post" action="{{ url_for('delete_patient', patient_id=patient.id) }}" style="margin-left:auto;" onsubmit="return confirm('Delete this record and files?');">
+        <button type="submit" class="btn-logout" style="cursor:pointer;border:none;">Delete record</button>
+    </form>
+</div>
+
+<div class="stat-card" style="margin-bottom:1.25rem;">
+    <h2 style="font-size:1.25rem;color:#f8fafc;margin-bottom:8px;">{{ patient.patient_name }}</h2>
+    <p style="color:#94a3b8;font-size:.9rem;line-height:1.6;">
+        <strong>Age:</strong> {{ patient.age or '—' }} ·
+        <strong>Gender:</strong> {{ patient.gender or '—' }} ·
+        <strong>Phone:</strong> {{ patient.phone or '—' }}<br>
+        <strong>Address:</strong> {{ patient.address or '—' }}<br>
+        <strong>Date:</strong> {{ patient.prediction_date }}
+    </p>
+    <p style="margin-top:12px;">
+        <span class="badge {% if patient.result == 'PNEUMONIA' %}badge-warn{% else %}badge-ok{% endif %}">{{ patient.result }}</span>
+        <span style="margin-left:12px;color:#cbd5e1;font-weight:600;">{{ '%.2f'|format(patient.confidence) }}% confidence</span>
+    </p>
+</div>
+
+<div class="image-compare-grid">
+    <div class="xray-frame">
+        <div class="xray-frame-header"><span class="xray-frame-title">Original X-ray</span></div>
+        {% if patient.image_path %}
+        <img src="{{ url_for('static', filename=patient.image_path) }}" alt="Original">
+        {% else %}<p style="padding:1rem;color:#64748b;">No image</p>{% endif %}
+    </div>
+    <div class="xray-frame">
+        <div class="xray-frame-header"><span class="xray-frame-title">Grad-CAM</span></div>
+        {% if patient.gradcam_path %}
+        <img src="{{ url_for('static', filename=patient.gradcam_path) }}" alt="Grad-CAM">
+        {% else %}<p style="padding:1rem;color:#64748b;">No Grad-CAM</p>{% endif %}
+    </div>
+</div>
+
+{% if patient.description %}
+<div class="detail-panel" style="margin-top:1.25rem;">
+    <h3>Clinical-style summary</h3>
+    <p>{{ patient.description.strip() }}</p>
+</div>
+{% endif %}
+
+{% if suggestions %}
+<div class="detail-panel" style="margin-top:1rem;">
+    <h3>Suggestions</h3>
+    <ul class="suggestion-list">
+        {% for item in suggestions %}
+        <li><span class="si">{{ loop.index }}</span><span>{{ item }}</span></li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<script type="application/json" id="detailShare">{{ {
+  'name': patient.patient_name,
+  'result': patient.result,
+  'confidence': patient.confidence
+} | tojson }}</script>
+<script>
+(function(){
+  var el = document.getElementById('detailShare');
+  if(!el) return;
+  var d = JSON.parse(el.textContent);
+  function text(){
+    return 'Patient: ' + d.name + '\\nResult: ' + d.result + ' (' + d.confidence + '%)\\nEducational AI — not a diagnosis.';
+  }
+  document.getElementById('btnCopyDetail')?.addEventListener('click', function(){
+    navigator.clipboard.writeText(text());
+    var t = document.getElementById('globalToast');
+    if(t){ t.style.opacity='1'; t.textContent='Copied.'; setTimeout(function(){ t.style.opacity='0'; }, 2000); }
+  });
+  document.getElementById('btnWaDetail')?.addEventListener('click', function(){
+    window.open('https://wa.me/?text=' + encodeURIComponent(text()), '_blank');
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_heading %}Settings{% endblock %}
+{% block content %}
+
+<p class="settings-intro">Manage your account, appearance, and how the AI assistant connects. Jump to:
+    <a href="#account">Account</a> ·
+    <a href="#appearance">Appearance</a> ·
+    <a href="#ai">AI assistant</a> ·
+    <a href="#data">Data</a> ·
+    <a href="#about">About</a>
+</p>
+
+<div class="settings-grid">
+
+    <section id="account" class="settings-card" aria-labelledby="settings-account-h">
+        <div class="settings-card-head">
+            <h2 id="settings-account-h" class="settings-card-title">Account</h2>
+            <p class="settings-card-desc">Who is signed in on this browser session.</p>
+        </div>
+        <dl class="settings-dl">
+            <div class="settings-dl-row">
+                <dt>Username</dt>
+                <dd><strong>{{ account_username }}</strong></dd>
+            </div>
+            <div class="settings-dl-row">
+                <dt>Email</dt>
+                <dd>{{ account_email }}</dd>
+            </div>
+        </dl>
+        <div class="settings-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn-settings-secondary">Back to dashboard</a>
+            <a href="{{ url_for('logout') }}" class="btn-settings-danger">Log out</a>
+        </div>
+    </section>
+
+    <section id="appearance" class="settings-card" aria-labelledby="settings-appearance-h">
+        <div class="settings-card-head">
+            <h2 id="settings-appearance-h" class="settings-card-title">Appearance</h2>
+            <p class="settings-card-desc">Theme is stored in this browser (<code class="settings-code">localStorage</code>). You can also use the ◐ control in the top bar.</p>
+        </div>
+        <div class="settings-theme-row" role="group" aria-label="Choose theme">
+            <button type="button" class="btn-theme-pick" data-set-theme="dark" id="btnThemeDark">Dark</button>
+            <button type="button" class="btn-theme-pick" data-set-theme="light" id="btnThemeLight">Light</button>
+        </div>
+        <p class="settings-hint">Current: <span id="themeCurrentLabel">—</span></p>
+    </section>
+
+    <section id="ai" class="settings-card settings-card-wide" aria-labelledby="settings-ai-h">
+        <div class="settings-card-head">
+            <h2 id="settings-ai-h" class="settings-card-title">AI assistant</h2>
+            <p class="settings-card-desc">The chat uses cloud models over the internet. Configure keys in a <code class="settings-code">.env</code> file on the PC that runs Flask, then restart the server.</p>
+        </div>
+
+        <div class="settings-status-grid">
+            <div class="settings-status-item">
+                <span class="settings-status-label">Gemini (Google)</span>
+                {% if ai_status.gemini %}
+                <span class="settings-badge settings-badge-ok">Configured</span>
+                {% if ai_status.gemini_mask %}<span class="settings-key-hint" title="Last characters only">{{ ai_status.gemini_mask }}</span>{% endif %}
+                {% else %}
+                <span class="settings-badge settings-badge-off">Not set</span>
+                {% endif %}
+            </div>
+            <div class="settings-status-item">
+                <span class="settings-status-label">Groq</span>
+                {% if ai_status.groq %}
+                <span class="settings-badge settings-badge-ok">Configured</span>
+                {% else %}
+                <span class="settings-badge settings-badge-muted">Optional</span>
+                {% endif %}
+            </div>
+            <div class="settings-status-item">
+                <span class="settings-status-label">OpenRouter</span>
+                {% if ai_status.openrouter %}
+                <span class="settings-badge settings-badge-ok">Configured</span>
+                {% else %}
+                <span class="settings-badge settings-badge-muted">Optional</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="settings-actions settings-actions-wrap">
+            {% if ai_status.any %}
+            <a href="{{ url_for('assistant_page') }}" class="btn-settings-primary">Open AI assistant</a>
+            <button type="button" class="btn-settings-secondary" id="btnTestAi">Test cloud connection</button>
+            {% else %}
+            <span class="settings-badge settings-badge-warn">Assistant disabled until at least one key is set</span>
+            {% endif %}
+        </div>
+        <p class="settings-test-result" id="aiTestResult" aria-live="polite"></p>
+
+        <h3 class="settings-subtitle">Setup checklist</h3>
+        <ol class="settings-steps">
+            <li>Get a free API key:
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio (Gemini)</a>
+                · <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Groq</a>
+                · <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">OpenRouter</a>
+            </li>
+            <li>Create or edit this file on your machine (same folder as <code class="settings-code">backend</code>):<br>
+                <code class="settings-path" id="envPathDisplay">{{ env_file_path }}</code>
+                <button type="button" class="btn-settings-ghost" id="btnCopyEnvPath" title="Copy path">Copy path</button>
+            </li>
+            <li>Add a line: <code class="settings-code">GOOGLE_API_KEY=your_key_here</code></li>
+            <li>Install deps if needed: <code class="settings-code">pip install python-dotenv google-generativeai</code></li>
+            <li>Restart Flask from the <code class="settings-code">backend</code> folder, then refresh Settings.</li>
+        </ol>
+        <p class="settings-hint">Order of use: Gemini → Groq → OpenRouter. Needs <strong>internet</strong> on the computer running the app.</p>
+    </section>
+
+    <section id="data" class="settings-card" aria-labelledby="settings-data-h">
+        <div class="settings-card-head">
+            <h2 id="settings-data-h" class="settings-card-title">Data</h2>
+            <p class="settings-card-desc">Local SQLite database on this machine.</p>
+        </div>
+        <p class="settings-mono-path"><code class="settings-path">{{ db_file_path }}</code></p>
+        <div class="settings-actions">
+            <a href="{{ url_for('patients_list') }}" class="btn-settings-secondary">Patient records</a>
+            <a href="{{ url_for('reports_page') }}" class="btn-settings-secondary">Reports</a>
+        </div>
+        <p class="settings-hint">Back up <code class="settings-code">database/app.db</code> to keep users and patient history.</p>
+    </section>
+
+    <section id="about" class="settings-card settings-card-wide" aria-labelledby="settings-about-h">
+        <div class="settings-card-head">
+            <h2 id="settings-about-h" class="settings-card-title">About</h2>
+            <p class="settings-card-desc">Pneumonia AI Lab — educational demo: DenseNet121 features, SVM, Grad-CAM. Not a medical device.</p>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+(function () {
+  var key = "pneumonia-app-theme";
+  function label() {
+    var el = document.getElementById("themeCurrentLabel");
+    if (!el) return;
+    el.textContent = document.documentElement.getAttribute("data-theme") || "dark";
+  }
+  label();
+  document.querySelectorAll("[data-set-theme]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var t = btn.getAttribute("data-set-theme");
+      if (t !== "light" && t !== "dark") return;
+      document.documentElement.setAttribute("data-theme", t);
+      try { localStorage.setItem(key, t); } catch (e) {}
+      label();
+    });
+  });
+
+  var envPath = {{ env_file_path | tojson }};
+  document.getElementById("btnCopyEnvPath")?.addEventListener("click", function () {
+    navigator.clipboard.writeText(envPath).then(function () {
+      var toast = document.getElementById("globalToast");
+      if (toast) { toast.textContent = "Path copied."; toast.style.opacity = "1"; setTimeout(function () { toast.style.opacity = "0"; }, 2000); }
+    });
+  });
+
+  var testEl = document.getElementById("btnTestAi");
+  var outEl = document.getElementById("aiTestResult");
+  testEl?.addEventListener("click", function () {
+    outEl.textContent = "Testing…";
+    fetch("/api/settings/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (x) {
+        if (x.ok && x.d.ok) {
+          outEl.textContent = x.d.message + (x.d.preview ? " (" + x.d.preview + ")" : "");
+        } else {
+          outEl.textContent = x.d.message || "Test failed.";
+        }
+        var toast = document.getElementById("globalToast");
+        if (toast) {
+          toast.textContent = x.ok && x.d.ok ? "AI test OK" : "AI test failed";
+          toast.style.opacity = "1";
+          setTimeout(function () { toast.style.opacity = "0"; }, 2500);
+        }
+      })
+      .catch(function () { outEl.textContent = "Network error."; });
+  });
+})();
+</script>
+{% endblock %}

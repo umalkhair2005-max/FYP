@@ -8,73 +8,75 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="page-auth">
-    <div class="brand" style="margin-bottom:8px">
-        <div class="brand-mark" aria-hidden="true">🫁</div>
-        <div class="brand-text">
-            <span class="brand-name">Pneumonia AI Lab</span>
-            <span class="brand-tag">New account</span>
-        </div>
-    </div>
-
-    <div class="auth-hero">
-        <p class="subtitle" style="margin-bottom:0;max-width:380px;margin-left:auto;margin-right:auto">Create a local profile to access the analyzer. Data is stored in SQLite on this machine.</p>
-    </div>
-
-    <div class="auth-card">
-        <h1>Sign up</h1>
-        <p class="subtitle">Choose a username, email, and password.</p>
-
-        <form method="POST" autocomplete="off" class="login-signup">
-            {% if error %}
-            <p class="auth-error" role="alert">{{ error }}</p>
-            {% endif %}
-
-            <input type="text"
-                   name="username"
-                   placeholder="Username"
-                   autocomplete="username"
-                   required
-                   aria-label="Username">
-
-            <input type="email"
-                   name="email"
-                   placeholder="Email"
-                   autocomplete="email"
-                   required
-                   aria-label="Email">
-
-            <div class="password-input-wrap">
-                <input type="password"
-                       name="password"
-                       placeholder="Password"
-                       autocomplete="new-password"
-                       required
-                       id="password"
-                       aria-label="Password">
-                <button type="button"
-                        class="password-toggle"
-                        aria-label="Show password"
-                        aria-pressed="false">
-                    <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <svg class="icon-eye-off is-hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                        <line x1="2" y1="2" x2="22" y2="22"/>
-                    </svg>
-                </button>
+    <div class="auth-layout">
+        <div class="brand">
+            <div class="brand-mark" aria-hidden="true">🫁</div>
+            <div class="brand-text">
+                <span class="brand-name">Pneumonia AI Lab</span>
+                <span class="brand-tag">New account</span>
             </div>
+        </div>
 
-            <button type="submit">Create account</button>
-        </form>
+        <div class="auth-hero">
+            <p class="auth-hero__text">Create a local profile to access the analyzer. Data is stored in SQLite on this machine.</p>
+        </div>
 
-        <p class="auth-footer">
-            Already registered?
-            <a href="{{ url_for('login') }}">Log in</a>
-        </p>
+        <div class="auth-card">
+            <h1>Sign up</h1>
+            <p class="subtitle">Choose a username, email, and password.</p>
+
+            <form method="POST" autocomplete="off" class="login-signup">
+                {% if error %}
+                <p class="auth-error" role="alert">{{ error }}</p>
+                {% endif %}
+
+                <input type="text"
+                       name="username"
+                       placeholder="Username"
+                       autocomplete="username"
+                       required
+                       aria-label="Username">
+
+                <input type="email"
+                       name="email"
+                       placeholder="Email"
+                       autocomplete="email"
+                       required
+                       aria-label="Email">
+
+                <div class="password-input-wrap">
+                    <input type="password"
+                           name="password"
+                           placeholder="Password"
+                           autocomplete="new-password"
+                           required
+                           id="password"
+                           aria-label="Password">
+                    <button type="button"
+                            class="password-toggle"
+                            aria-label="Show password"
+                            aria-pressed="false">
+                        <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="icon-eye-off is-hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                            <line x1="2" y1="2" x2="22" y2="22"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <button type="submit">Create account</button>
+            </form>
+
+            <p class="auth-footer">
+                Already registered?
+                <a href="{{ url_for('login') }}">Log in</a>
+            </p>
+        </div>
     </div>
 
     <script>

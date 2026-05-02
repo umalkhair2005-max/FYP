@@ -1,0 +1,46 @@
+{% extends "base_dashboard.html" %}
+{% block title %}AI assistant{% endblock %}
+{% block page_heading %}AI medical assistant{% endblock %}
+{% block content %}
+<div class="assistant-page">
+{% if not llm_online %}
+<div class="assistant-setup-only">
+    <p class="assistant-lead" style="margin-bottom:1rem;">
+        The <strong>AI assistant is online-only</strong>: it runs only when this computer has <strong>internet</strong>
+        and a valid <strong>cloud API key</strong> (Gemini, Groq, or OpenRouter). There is no offline FAQ.
+    </p>
+    <div class="assistant-setup-card">
+        <h2 class="assistant-setup-title">Enable the assistant</h2>
+        <ol class="assistant-setup-steps">
+            <li>Get a free key from <strong>Google AI Studio</strong> (search: Google AI Studio API key).</li>
+            <li>In your project folder (next to <code class="assistant-code">backend</code>), create <code class="assistant-code">.env</code> with:
+                <code class="assistant-code">GOOGLE_API_KEY=paste_key_here</code></li>
+            <li>Run <code class="assistant-code">pip install python-dotenv</code> if needed.</li>
+            <li>Restart Flask (<code class="assistant-code">python app.py</code> from the <code class="assistant-code">backend</code> folder).</li>
+            <li>Refresh this page. The chat will appear when the key loads.</li>
+        </ol>
+        <p class="assistant-setup-note">Optional keys: <code class="assistant-code">GROQ_API_KEY</code>, <code class="assistant-code">OPENROUTER_API_KEY</code>. See <a href="{{ url_for('settings_page') }}">Settings</a>.</p>
+    </div>
+</div>
+{% else %}
+<div class="assistant-chat-card">
+    <div class="assistant-chat-header">
+        <span>Conversation</span>
+        <button type="button" class="assistant-clear-btn" id="assistantClear" title="Clear saved messages">Clear</button>
+    </div>
+    <div class="assistant-messages" id="assistantMessages" role="log" aria-live="polite" aria-relevant="additions"></div>
+    <div class="assistant-suggestions" id="assistantSuggestions" aria-label="Suggested prompts"></div>
+    <div class="assistant-input-row">
+        <input type="text" id="assistantInput" placeholder="Message…" autocomplete="off" aria-label="Message to assistant">
+        <button type="button" id="assistantSend" class="assistant-send-btn">Send</button>
+    </div>
+</div>
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+{% if llm_online %}
+<script src="{{ url_for('static', filename='js/assistant_chat.js') }}"></script>
+{% endif %}
+{% endblock %}
