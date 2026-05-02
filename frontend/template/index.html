@@ -8,7 +8,7 @@
     <meta name="description" content="AI-assisted chest X-ray screening with Grad-CAM — not a medical diagnosis.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body{% if result %} data-scroll-to-results{% endif %}>
     <a class="skip-link" href="#main">Skip to content</a>
 
     <div class="page-wrap">
@@ -237,7 +237,7 @@
     <script type="application/json" id="analysis-data">{{ {
         'result': result,
         'confidence': confidence,
-        'description': (description or '').strip(),
+        'description': (description or '') | trim,
         'suggestions': suggestions or [],
         'user': session.user,
         'filename': img_name or '',
@@ -395,12 +395,12 @@
                 setPos(range.value);
             }
 
-            {% if result %}
-            requestAnimationFrame(function () {
-                var el = document.getElementById('results');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-            {% endif %}
+            if (document.body.hasAttribute('data-scroll-to-results')) {
+                requestAnimationFrame(function () {
+                    var el = document.getElementById('results');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            }
         })();
     </script>
 </body>
