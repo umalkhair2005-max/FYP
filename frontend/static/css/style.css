@@ -1036,25 +1036,13 @@ a:hover {
   position: relative;
   width: 100%;
   max-width: 420px;
-  padding: 40px 28px 32px;
+  padding: 32px 28px 32px;
   border-radius: var(--radius-lg);
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(12px);
   animation: fadeUp 0.7s ease 0.05s both;
-}
-
-.auth-card::before {
-  content: "";
-  position: absolute;
-  left: 28px;
-  right: 28px;
-  top: 0;
-  height: 3px;
-  border-radius: 0 0 4px 4px;
-  background: linear-gradient(90deg, var(--accent), #818cf8);
-  opacity: 0.9;
 }
 
 .auth-card h1 {
@@ -1087,20 +1075,29 @@ form.login-signup input[type="email"] {
   color: var(--text);
   font-family: var(--font);
   font-size: 0.95rem;
+  line-height: 1.35;
+  min-height: 48px;
+  box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Password + eye: same grid cell = perfect vertical center, no overflow */
 .password-input-wrap {
-  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
   width: 100%;
   margin-top: 12px;
 }
 
 .password-input-wrap input[type="password"],
 .password-input-wrap input[type="text"] {
-  margin-top: 0;
-  padding-right: 52px;
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
   width: 100%;
+  min-width: 0;
+  padding-right: 48px;
+  box-sizing: border-box;
 }
 
 .password-input-wrap input:focus {
@@ -1110,26 +1107,41 @@ form.login-signup input[type="email"] {
 }
 
 .password-toggle {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 40px;
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  margin-right: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease, opacity 0.15s ease;
 }
 
 .password-toggle:hover {
   color: var(--accent);
-  background: rgba(56, 189, 248, 0.12);
+  background: transparent;
+}
+
+.password-toggle:active {
+  background: transparent;
+  color: #7dd3fc;
+  opacity: 0.9;
 }
 
 .password-toggle:focus {
@@ -1139,12 +1151,17 @@ form.login-signup input[type="email"] {
 .password-toggle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: 6px;
+  background: transparent;
 }
 
 .password-toggle svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
+  display: block;
+  pointer-events: none;
+  transform: translateY(6px);
 }
 
 .password-toggle svg.is-hidden {
