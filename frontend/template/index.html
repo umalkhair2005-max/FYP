@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pneumonia Detection — Analysis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0c1222">
+    <meta name="description" content="AI-assisted chest X-ray screening with Grad-CAM — not a medical diagnosis.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="page-wrap">
+        <header class="navbar fade-in">
+            <div class="brand">
+                <div class="brand-mark" aria-hidden="true">🫁</div>
+                <div class="brand-text">
+                    <span class="brand-name">Pneumonia AI Lab</span>
+                    <span class="brand-tag">DenseNet121 · SVM · Grad-CAM</span>
+                </div>
+            </div>
+            {% if session.user %}
+            <div class="user-section">
+                <span class="user-pill">Signed in as <strong>{{ session.user }}</strong></span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+            </div>
+            {% endif %}
+        </header>
+
+        <main id="main">
+            <div class="hero">
+                <div class="hero-badge">Research / educational tool</div>
+                <h1 class="main-title">Chest X-ray analysis</h1>
+                <p class="subtitle">Upload a frontal chest radiograph. The model estimates <strong>normal vs pneumonia</strong> and highlights regions the network focused on.</p>
+            </div>
+
+            <div class="main-grid">
+                <section class="glass-card project-form-card">
+                    <h2>Upload &amp; run</h2>
+                    <p class="card-lead">PNG or JPG recommended. Analysis runs on your machine via the local server.</p>
+
+                    <form method="POST"
+                          enctype="multipart/form-data"
+                          class="project-form"
+                          id="analyzeForm"
+                          novalidate>
+
+                        <label class="file-drop" id="fileDrop">
+                            <div class="file-drop-icon" aria-hidden="true">📎</div>
+                            <div class="file-drop-title">Drop an image or tap to browse</div>
+                            <div class="file-drop-hint">One file · image/*</div>
+                            <input type="file"
+                                   name="image"
+                                   id="imageInput"
+                                   accept="image/*"
+                                   required
+                                   aria-label="Chest X-ray image file">
+                        </label>
+                        <div class="file-name" id="fileName" aria-live="polite"></div>
+
+                        <div class="preview-box" id="previewBox">
+                            <span class="preview-placeholder" id="previewPlaceholder">Preview appears after you choose a file.</span>
+                            <img id="previewImage" alt="Selected X-ray preview">
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="submitBtn">
+                            <span>Analyze X-ray</span>
+                            <span aria-hidden="true">→</span>
+                        </button>
+                    </form>
+                </section>
+
+                <aside class="side-stack">
+                    <div class="side-card">
+                        <h3>Pipeline</h3>
+                        <ul class="side-list">
+                            <li><span>1</span> Resize &amp; normalize to 224×224</li>
+                            <li><span>2</span> CNN feature vector</li>
+                            <li><span>3</span> SVM class probability</li>
+                            <li><span>4</span> Grad-CAM on full CNN</li>
+                        </ul>
+                    </div>
+                    <p class="disclaimer-mini"><strong>Important:</strong> This is not a clinical device. Always follow professional medical advice; do not use output alone for treatment decisions.</p>
+                </aside>
+            </div>
+
+            {% if result %}
+            <section class="results-section" id="results" tabindex="-1">
+                <div class="glass-card">
+                    <div class="results-header">
+                        <div>
+                            <h2>Analysis report</h2>
+                            <p class="card-lead" style="margin-bottom:0">Summary for your current upload{% if img_name %} (<span class="mono" style="font-family:var(--mono,monospace);font-size:0.85em">{{ img_name }}</span>){% endif %}.</p>
+                        </div>
+                        <div class="result-pill {% if result == 'PNEUMONIA' %}pneumonia{% else %}normal{% endif %}">
+                            {% if result == 'PNEUMONIA' %}⚠{% else %}✓{% endif %}
+                            {{ result }}
+                        </div>
+                    </div>
+
+                    <div class="metrics-row">
+                        <div class="metric-card">
+                            <div class="metric-label">Model confidence</div>
+                            <div class="confidence-wrap">
+                                <div class="confidence-ring" style="--value: {{ confidence | float }}">
+                                    <span>{{ confidence }}%</span>
+                                </div>
+                                <div>
+                                    <div class="metric-value accent">{{ confidence }}%</div>
+                                    <p style="font-size:0.82rem;color:var(--muted);margin-top:4px">Probability mass on the predicted class (SVM).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Classifier</div>
+                            <div class="metric-value" style="font-size:1.1rem">SVM (RBF)</div>
+                            <p style="font-size:0.82rem;color:var(--muted);margin-top:8px">Features from frozen DenseNet121 trunk + trained head.</p>
+                        </div>
+                    </div>
+
+                    <div class="panel-grid">
+                        {% if description %}
+                        <div class="detail-panel">
+                            <h3>📋 Clinical-style summary</h3>
+                            <p>{{ (description or '').strip() }}</p>
+                        </div>
+                        {% endif %}
+                        {% if suggestions %}
+                        <div class="detail-panel">
+                            <h3>💡 Suggested next steps</h3>
+                            <ul class="suggestion-list">
+                                {% for item in suggestions %}
+                                <li>
+                                    <span class="si">{{ loop.index }}</span>
+                                    <span>{{ item }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="share-dock">
+                        <h3>Share this report</h3>
+                        <p class="card-lead" style="margin-bottom:12px">Copy includes classification, confidence, summary, and bullet list — suitable for notes or messaging.</p>
+                        <div class="share-actions">
+                            <button type="button" class="btn-share" id="btnCopyReport">📋 Copy full report</button>
+                            <button type="button" class="btn-share whatsapp" id="btnWhatsApp">Share on WhatsApp</button>
+                            <button type="button" class="btn-share" id="btnNativeShare" hidden>Share…</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            {% if gradcam_path and original_image %}
+            <section class="gradcam-section" id="gradcam" aria-labelledby="gradcam-heading">
+                <h2 id="gradcam-heading">Grad-CAM visualization</h2>
+                <p class="gradcam-lead">Warmer colors indicate regions that most influenced the convolutional model. Compare with the original scan and use the slider to cross-fade.</p>
+
+                <div class="gradcam-legend">
+                    <span class="legend-item"><span class="legend-swatch" aria-hidden="true"></span> Low → high activation</span>
+                    <span class="legend-item">Overlay = explainability map, not anatomy labels</span>
+                </div>
+
+                <div class="image-compare-grid">
+                    <div class="xray-frame">
+                        <div class="xray-frame-header">
+                            <span class="xray-frame-title">Original</span>
+                            <span class="xray-frame-badge">Input</span>
+                        </div>
+                        <img src="{{ url_for('static', filename=original_image) }}"
+                             alt="Uploaded chest X-ray"
+                             loading="lazy">
+                    </div>
+                    <div class="xray-frame">
+                        <div class="xray-frame-header">
+                            <span class="xray-frame-title">Grad-CAM</span>
+                            <span class="xray-frame-badge">Attention</span>
+                        </div>
+                        <img src="{{ url_for('static', filename=gradcam_path) }}"
+                             alt="Grad-CAM heatmap overlaid on X-ray"
+                             loading="lazy">
+                    </div>
+                </div>
+
+                <div class="compare-slider-block glass-card" style="margin-top:20px;padding:22px">
+                    <h3>Interactive compare</h3>
+                    <p class="card-lead" style="margin-bottom:14px">Drag the slider to reveal original (left) versus Grad-CAM overlay (right).</p>
+                    <div class="compare-wrap" id="compareWrap" style="--pos:50%">
+                        <img class="layer base"
+                             src="{{ url_for('static', filename=original_image) }}"
+                             alt="">
+                        <img class="layer top"
+                             src="{{ url_for('static', filename=gradcam_path) }}"
+                             alt="">
+                        <div class="compare-divider" id="compareDivider" aria-hidden="true"></div>
+                        <div class="compare-labels">
+                            <span>Original</span>
+                            <span>Grad-CAM</span>
+                        </div>
+                    </div>
+                    <label for="compareRange" class="sr-only">Comparison slider position</label>
+                    <input type="range"
+                           class="compare-range"
+                           id="compareRange"
+                           min="0"
+                           max="100"
+                           value="50"
+                           aria-valuemin="0"
+                           aria-valuemax="100"
+                           aria-valuenow="50">
+                </div>
+
+                <div class="download-row">
+                    <a href="{{ url_for('static', filename=gradcam_path) }}"
+                       download="gradcam_result.png"
+                       class="btn-outline">⬇ Download Grad-CAM image</a>
+                    <a href="{{ url_for('static', filename=original_image) }}"
+                       download="original_xray.png"
+                       class="btn-outline">⬇ Download original upload</a>
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+        <div class="loader" role="status" aria-label="Analyzing"></div>
+        <p>Running CNN + SVM and generating Grad-CAM…</p>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    {% if result %}
+    <script type="application/json" id="analysis-data">{{ {
+        'result': result,
+        'confidence': confidence,
+        'description': (description or '').strip(),
+        'suggestions': suggestions or [],
+        'user': session.user,
+        'filename': img_name or '',
+        'model': 'DenseNet121 feature extractor + SVM (RBF), Grad-CAM on full CNN'
+    } | tojson }}</script>
+    {% endif %}
+
+    <script>
+        (function () {
+            var form = document.getElementById('analyzeForm');
+            var input = document.getElementById('imageInput');
+            var preview = document.getElementById('previewImage');
+            var placeholder = document.getElementById('previewPlaceholder');
+            var fileNameEl = document.getElementById('fileName');
+            var overlay = document.getElementById('loadingOverlay');
+            var toast = document.getElementById('toast');
+
+            function showToast(msg) {
+                if (!toast) return;
+                toast.textContent = msg;
+                toast.classList.add('is-show');
+                clearTimeout(showToast._t);
+                showToast._t = setTimeout(function () {
+                    toast.classList.remove('is-show');
+                }, 3200);
+            }
+
+            if (input && preview) {
+                input.addEventListener('change', function () {
+                    var file = input.files && input.files[0];
+                    if (fileNameEl) fileNameEl.textContent = file ? file.name : '';
+                    if (!file) {
+                        preview.classList.remove('is-visible');
+                        if (placeholder) placeholder.classList.remove('is-hidden');
+                        return;
+                    }
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        preview.classList.add('is-visible');
+                        if (placeholder) placeholder.classList.add('is-hidden');
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            if (form && overlay) {
+                form.addEventListener('submit', function () {
+                    overlay.classList.add('is-visible');
+                    overlay.setAttribute('aria-hidden', 'false');
+                });
+            }
+
+            var dataEl = document.getElementById('analysis-data');
+            function getAnalysis() {
+                if (!dataEl) return null;
+                try {
+                    return JSON.parse(dataEl.textContent);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function buildReportText(d) {
+                if (!d) return '';
+                var lines = [];
+                lines.push('══════════════════════════════════════');
+                lines.push('  CHEST X-RAY AI ANALYSIS (REPORT)');
+                lines.push('══════════════════════════════════════');
+                lines.push('');
+                lines.push('User: ' + (d.user || '—'));
+                if (d.filename) lines.push('File: ' + d.filename);
+                lines.push('Model: ' + (d.model || '—'));
+                lines.push('Classification: ' + (d.result || '—'));
+                lines.push('Confidence: ' + (d.confidence != null ? d.confidence + '%' : '—'));
+                lines.push('');
+                lines.push('--- Summary ---');
+                lines.push((d.description || '').trim() || '(No summary text.)');
+                lines.push('');
+                if (d.suggestions && d.suggestions.length) {
+                    lines.push('--- Suggested next steps ---');
+                    d.suggestions.forEach(function (s, i) {
+                        lines.push((i + 1) + '. ' + s);
+                    });
+                    lines.push('');
+                }
+                lines.push('---');
+                lines.push('Disclaimer: Not a medical diagnosis. Consult a qualified clinician.');
+                lines.push('══════════════════════════════════════');
+                return lines.join('\n');
+            }
+
+            var btnCopy = document.getElementById('btnCopyReport');
+            if (btnCopy) {
+                btnCopy.addEventListener('click', function () {
+                    var text = buildReportText(getAnalysis());
+                    if (!text) {
+                        showToast('Nothing to copy.');
+                        return;
+                    }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(function () {
+                            showToast('Full report copied to clipboard.');
+                        }).catch(function () {
+                            showToast('Could not copy — try another browser.');
+                        });
+                    } else {
+                        showToast('Clipboard not available.');
+                    }
+                });
+            }
+
+            var btnWa = document.getElementById('btnWhatsApp');
+            if (btnWa) {
+                btnWa.addEventListener('click', function () {
+                    var d = getAnalysis();
+                    if (!d) return;
+                    var lines = [
+                        '📋 Chest X-ray AI (local demo)',
+                        'Result: ' + d.result,
+                        'Confidence: ' + d.confidence + '%'
+                    ];
+                    if (d.filename) lines.push('File: ' + d.filename);
+                    lines.push('');
+                    lines.push('Use “Copy full report” in the app for the complete summary.');
+                    lines.push('Not a medical diagnosis.');
+                    var url = 'https://wa.me/?text=' + encodeURIComponent(lines.join('\n'));
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                });
+            }
+
+            var btnShare = document.getElementById('btnNativeShare');
+            if (btnShare && navigator.share) {
+                btnShare.hidden = false;
+                btnShare.addEventListener('click', function () {
+                    var d = getAnalysis();
+                    var text = buildReportText(d);
+                    navigator.share({
+                        title: 'Chest X-ray analysis',
+                        text: text
+                    }).catch(function () {});
+                });
+            }
+
+            var wrap = document.getElementById('compareWrap');
+            var range = document.getElementById('compareRange');
+            if (wrap && range) {
+                function setPos(p) {
+                    wrap.style.setProperty('--pos', p + '%');
+                    range.setAttribute('aria-valuenow', String(p));
+                }
+                range.addEventListener('input', function () {
+                    setPos(range.value);
+                });
+                setPos(range.value);
+            }
+
+            {% if result %}
+            requestAnimationFrame(function () {
+                var el = document.getElementById('results');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            {% endif %}
+        })();
+    </script>
+</body>
+</html>

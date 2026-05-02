@@ -1,0 +1,40 @@
+# --- Requested: env, caches, IDE, bytecode ---
+pneumonia_env/
+__pycache__/
+.vscode/
+*.pyc
+
+# Other common virtualenv names
+venv/
+.venv/
+env/
+ENV/
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# Local app data (generated at runtime)
+users.db
+frontend/static/uploads/
+
+# Large ML artifacts (re-train or use Git LFS if you need them in repo)
+*.h5
+*.pkl
+*.pickle
+
+# Chest X-ray datasets are usually very large — use README + download link
+dataset/
