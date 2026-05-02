@@ -2,6 +2,8 @@ import os
 import re
 import json
 import uuid
+import threading
+import webbrowser
 from functools import wraps
 from datetime import date, timedelta
 
@@ -733,7 +735,20 @@ def _print_llm_startup_status():
     print("==================================================\n")
 
 
+def _open_local_browser(port: int, delay_sec: float = 1.2) -> None:
+    """Open default browser once the dev server is listening (127.0.0.1)."""
+    url = f"http://127.0.0.1:{port}/"
+    threading.Timer(delay_sec, lambda: webbrowser.open(url)).start()
+
+
 if __name__ == "__main__":
     _print_llm_startup_status()
     port = int(os.environ.get("PORT", "5000"))
-    app.run(debug=True, host="0.0.0.0", port=port)
+    use_reloader = os.environ.get("USE_RELOADER", "1").lower() not in ("0", "false", "no")
+    if use_reloader:
+        # Debug reloader: only the Werkzeug child sets WERKZEUG_RUN_MAIN=true (avoids two browser tabs).
+        if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+            _open_local_browser(port)
+    else:
+        _open_local_browser(port)
+    app.run(debug=True, host="0.0.0.0", port=port, use_reloader=use_reloader)

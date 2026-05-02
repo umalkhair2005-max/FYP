@@ -365,8 +365,14 @@
 }
 
 .form-grid-detection textarea {
-  min-height: 72px;
+  min-height: 88px;
   resize: vertical;
+  font-family: inherit;
+  line-height: 1.45;
+}
+
+.form-grid-detection-span {
+  grid-column: 1 / -1;
 }
 
 /* AI assistant (full width main area) */
@@ -725,6 +731,19 @@ html[data-theme="light"] .data-table th {
 html[data-theme="light"] .data-table td {
   border-bottom-color: #f1f5f9;
   color: #334155;
+}
+
+html[data-theme="light"] .form-grid-detection input,
+html[data-theme="light"] .form-grid-detection select,
+html[data-theme="light"] .form-grid-detection textarea {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .form-grid-detection input::placeholder,
+html[data-theme="light"] .form-grid-detection textarea::placeholder {
+  color: #94a3b8;
 }
 
 @media (max-width: 900px) {

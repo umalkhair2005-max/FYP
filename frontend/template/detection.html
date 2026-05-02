@@ -35,13 +35,13 @@
             <label class="sr-only" for="phone">Phone</label>
             <input id="phone" name="phone" type="tel" placeholder="Phone" value="{{ form_vals.get('phone','') }}">
         </div>
-    </div>
-    <div style="margin-bottom:14px;">
-        <label class="sr-only" for="address">Address</label>
-        <textarea id="address" name="address" placeholder="Address (optional)">{{ form_vals.get('address','') }}</textarea>
+        <div class="form-grid-detection-span">
+            <label class="sr-only" for="address">Address</label>
+            <textarea id="address" name="address" rows="3" placeholder="Address (optional)">{{ form_vals.get('address','') }}</textarea>
+        </div>
     </div>
 
-    <label class="file-drop" id="fileDrop" style="border-color:rgba(56,189,248,0.35);">
+    <label class="file-drop file-drop-detection" id="fileDrop">
         <div class="file-drop-icon">📎</div>
         <div class="file-drop-title">X-ray image (PNG / JPG)</div>
         <input type="file" name="image" id="imageInput" accept="image/*" required aria-label="X-ray file">
