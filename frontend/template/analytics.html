@@ -4,11 +4,22 @@
 {% block content %}
 
 <p class="hc-page-lead" style="color:#94a3b8;font-size:.92rem;max-width:48rem;line-height:1.55;margin-bottom:1.25rem;">
-    Training metrics for <strong>DenseNet121</strong> feature head and <strong>SVM</strong> classifier. Data is read from
-    <code class="settings-code" style="font-size:.85em;">models/training_history.pkl</code> and
-    <code class="settings-code" style="font-size:.85em;">models/classification_report.txt</code> after you run
-    <code class="settings-code" style="font-size:.85em;">train_cnn_svm.py</code>.
+    Training metrics for <strong>DenseNet121</strong> feature head and <strong>SVM</strong> classifier. Charts read from
+    <code class="settings-code" style="font-size:.85em;">models/training_history.pkl</code>; test metrics from
+    <code class="settings-code" style="font-size:.85em;">models/classification_report.txt</code> and
+    <code class="settings-code" style="font-size:.85em;">models/confusion_matrix.txt</code>.
+    You do <strong>not</strong> need to retrain to update the confusion matrix — load saved models and evaluate on
+    <code class="settings-code" style="font-size:.85em;">dataset/test</code> (button below or run <code class="settings-code" style="font-size:.85em;">evaluate_saved_models.py</code>).
 </p>
+
+{% if not model_error %}
+<div class="analytics-toolbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:1.25rem;">
+    <button type="button" class="btn-primary-dash" id="btnRecomputeCm" style="font-size:.82rem;padding:8px 16px;border:none;cursor:pointer;">
+        Refresh test metrics from saved models
+    </button>
+    <span id="recomputeCmStatus" style="font-size:.85rem;color:#64748b;" aria-live="polite"></span>
+</div>
+{% endif %}
 
 {% if model_error %}
 <div class="auth-error" role="alert" style="margin-bottom:1rem;">Model load warning: {{ model_error }} (inference may be unavailable until files exist.)</div>
@@ -59,8 +70,11 @@
                 <div class="hc-cm-v" style="background:rgba(52,211,153,.45);">{{ analytics.confusion_matrix[1][1] }}</div>
             </div>
         </div>
+        {% if analytics.get('confusion_matrix_inferred') %}
+        <p style="color:#64748b;font-size:.78rem;margin-top:10px;">Counts reconstructed from recall × support in the report (re-run <code class="settings-code" style="font-size:.8em;">train_cnn_svm.py</code> to save an exact <code class="settings-code" style="font-size:.8em;">models/confusion_matrix.txt</code>).</p>
+        {% endif %}
         {% else %}
-        <p style="color:#64748b;font-size:.88rem;">Run training and save classification_report.txt to view the matrix.</p>
+        <p style="color:#64748b;font-size:.88rem;">Run training and save <code class="settings-code" style="font-size:.85em;">classification_report.txt</code> (and optionally <code class="settings-code" style="font-size:.85em;">confusion_matrix.txt</code>) to view the matrix.</p>
         {% endif %}
     </div>
     <div class="chart-card">
@@ -160,6 +174,39 @@
       }
     });
   }
+})();
+
+(function () {
+  var btn = document.getElementById("btnRecomputeCm");
+  var st = document.getElementById("recomputeCmStatus");
+  if (!btn || !st) return;
+  btn.addEventListener("click", function () {
+    btn.disabled = true;
+    st.textContent = "Loading models & running test set… (may take a minute)";
+    fetch("{{ url_for('api_recompute_eval_metrics') }}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { ok: r.ok, d: d };
+        });
+      })
+      .then(function (x) {
+        if (x.ok && x.d.ok) {
+          st.textContent = x.d.message || "Saved. Reloading…";
+          location.reload();
+        } else {
+          st.textContent = (x.d && x.d.error) || "Request failed.";
+          btn.disabled = false;
+        }
+      })
+      .catch(function () {
+        st.textContent = "Network error.";
+        btn.disabled = false;
+      });
+  });
 })();
 </script>
 {{ super() }}

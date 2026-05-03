@@ -1,105 +1,58 @@
-import tensorflow as tf
-import numpy as np
+"""
+Evaluate saved CNN + SVM on dataset/test — no training required.
+
+Writes the same files as training would for analytics:
+  models/confusion_matrix.txt, classification_report.txt, confusion_matrix.png
+
+Optional: replots CNN accuracy/loss from training_history.pkl (local dev).
+"""
 import os
-import joblib
 import pickle
+import sys
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from sklearn.metrics import confusion_matrix, classification_report
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "backend"))
 
-# -------------------------
-# PATHS
-# -------------------------
-MODEL_PATH = "models"
-TEST_PATH = "dataset/test"
-IMG_SIZE = (224,224)
+from recompute_eval_metrics import recompute_eval_metrics  # noqa: E402
 
-# -------------------------
-# LOAD MODELS
-# -------------------------
-feature_extractor = tf.keras.models.load_model(
-    os.path.join(MODEL_PATH, "cnn_feature_extractor.h5")
-)
+MODEL_PATH = ROOT / "models"
+TEST_PATH = ROOT / "dataset" / "test"
 
-svm_model = joblib.load(
-    os.path.join(MODEL_PATH, "svm_model.pkl")
-)
 
-# -------------------------
-# LOAD TRAINING HISTORY (FOR GRAPHS)
-# -------------------------
-with open(os.path.join(MODEL_PATH, "training_history.pkl"), "rb") as f:
-    history = pickle.load(f)
+def plot_training_history() -> None:
+    hp = MODEL_PATH / "training_history.pkl"
+    if not hp.is_file():
+        print("(skip) No training_history.pkl for accuracy/loss plots.")
+        return
+    with open(hp, "rb") as f:
+        history = pickle.load(f)
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 2, 1)
+    plt.plot(history["accuracy"], label="Train Accuracy")
+    plt.plot(history["val_accuracy"], label="Val Accuracy")
+    plt.legend()
+    plt.title("CNN Accuracy")
+    plt.savefig(MODEL_PATH / "cnn_accuracy.png")
+    plt.subplot(1, 2, 2)
+    plt.plot(history["loss"], label="Train Loss")
+    plt.plot(history["val_loss"], label="Val Loss")
+    plt.legend()
+    plt.title("CNN Loss")
+    plt.savefig(MODEL_PATH / "cnn_loss.png")
+    plt.close()
+    print("Saved cnn_accuracy.png and cnn_loss.png from training_history.pkl")
 
-# -------------------------
-# SAVE ACCURACY & LOSS GRAPHS
-# -------------------------
-plt.figure(figsize=(12,4))
 
-plt.subplot(1,2,1)
-plt.plot(history['accuracy'], label='Train Accuracy')
-plt.plot(history['val_accuracy'], label='Val Accuracy')
-plt.legend()
-plt.title("CNN Accuracy")
-plt.savefig(os.path.join(MODEL_PATH, "cnn_accuracy.png"))
-
-plt.subplot(1,2,2)
-plt.plot(history['loss'], label='Train Loss')
-plt.plot(history['val_loss'], label='Val Loss')
-plt.legend()
-plt.title("CNN Loss")
-plt.savefig(os.path.join(MODEL_PATH, "cnn_loss.png"))
-
-plt.show()
-
-# -------------------------
-# TEST DATA GENERATOR (NO SHUFFLE)
-# -------------------------
-datagen = ImageDataGenerator(rescale=1./255)
-
-test_gen = datagen.flow_from_directory(
-    TEST_PATH,
-    target_size=IMG_SIZE,
-    batch_size=1,
-    class_mode='binary',
-    shuffle=False
-)
-print(test_gen.class_indices)
-
-# -------------------------
-# FEATURE EXTRACTION
-# -------------------------
-X_test = feature_extractor.predict(test_gen)
-y_test = test_gen.classes
-print("X_test shape:", X_test.shape)
-
-# -------------------------
-# PREDICTIONS
-# -------------------------
-y_pred = svm_model.predict(X_test)
-
-# -------------------------
-# CONFUSION MATRIX
-# -------------------------
-cm = confusion_matrix(y_test, y_pred)
-
-plt.figure(figsize=(6,5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-plt.xlabel("Predicted")
-plt.ylabel("Actual")
-plt.title("Hybrid CNN + SVM Confusion Matrix")
-plt.savefig(os.path.join(MODEL_PATH, "confusion_matrix.png"))
-plt.show()
-
-# -------------------------
-# CLASSIFICATION REPORT
-# -------------------------
-report = classification_report(y_test, y_pred)
-
-with open(os.path.join(MODEL_PATH, "classification_report.txt"), "w") as f:
-    f.write(report)
-
-print(report)
-print("✅ Evaluation complete. All graphs & reports saved.")
+if __name__ == "__main__":
+    if not TEST_PATH.is_dir():
+        print(f"ERROR: Test folder not found: {TEST_PATH}")
+        sys.exit(1)
+    plot_training_history()
+    out = recompute_eval_metrics(str(MODEL_PATH), str(TEST_PATH))
+    print(out["message"])
+    print("confusion_matrix:", out["confusion_matrix"])
+    print(f"test_samples: {out['test_samples']}")
+    print("Done.")

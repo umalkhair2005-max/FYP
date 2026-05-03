@@ -2,7 +2,7 @@
 {% block title %}New detection{% endblock %}
 {% block page_heading %}New chest X-ray scan{% endblock %}
 {% block content %}
-<p style="color:#94a3b8;font-size:.9rem;max-width:40rem;margin-bottom:1.25rem;line-height:1.5">
+<p class="detection-lead">
     Enter patient demographics, upload a frontal chest X-ray, then run <strong>DenseNet121</strong> feature extraction and <strong>SVM</strong> classification. Grad-CAM highlights regions the CNN emphasized.
 </p>
 
@@ -10,8 +10,8 @@
 <div class="auth-error" role="alert">{{ model_error }}</div>
 {% endif %}
 
-<form method="POST" enctype="multipart/form-data" id="detectForm" class="glass-card" style="padding:1.5rem;margin-bottom:1.5rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;">
-    <h2 style="font-size:1.1rem;margin-bottom:1rem;color:#f1f5f9;">Patient &amp; imaging</h2>
+<form method="POST" enctype="multipart/form-data" id="detectForm" class="glass-card detection-panel">
+    <h2 class="detection-panel-title">Patient &amp; imaging</h2>
     <div class="form-grid-detection">
         <div>
             <label class="sr-only" for="patient_name">Patient name</label>
@@ -52,7 +52,7 @@
         <img id="previewImage" alt="Preview" class="">
     </div>
 
-    <button type="submit" class="btn-primary-dash" style="width:100%;margin-top:16px;padding:14px;font-size:1rem;">Run AI prediction</button>
+    <button type="submit" class="btn-primary-dash detection-submit">Run AI prediction</button>
 </form>
 
 {% if saved_patient_id %}

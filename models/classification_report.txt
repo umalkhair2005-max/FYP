@@ -8,4 +8,8 @@
 weighted avg       0.89      0.87      0.87       624
 
 
+confusion_matrix (test set, rows=actual, cols=predicted):
+[[160  74]
+ [  6 384]]
+
 Note: Good test accuracy on YOUR val/test folders does not guarantee perfect accuracy on random Google images — add diverse training data + keep augmentation strong.

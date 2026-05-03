@@ -467,6 +467,30 @@
   font-size: 0.8rem;
 }
 
+.hc-navbar-settings {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.hc-navbar-settings:hover {
+  background: rgba(56, 189, 248, 0.1);
+  color: #e2e8f0;
+}
+
+.hc-navbar-settings.is-active {
+  background: rgba(56, 189, 248, 0.14);
+  color: #7dd3fc;
+}
+
 /* Mobile */
 @media (max-width: 1024px) {
   .hc-navbar-inner--compact .hc-navbar-tools {
@@ -474,17 +498,54 @@
   }
 }
 
+@media (max-width: 520px) {
+  .hc-navbar-settings {
+    display: none;
+  }
+}
+
 html[data-theme="light"] .hc-navbar {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(241, 245, 249, 0.92) 100%
-  );
-  border-bottom-color: #e2e8f0;
+  background: #ffffff;
+  border-bottom: none !important;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .hc-navbar-settings {
+  color: #475569;
+}
+
+html[data-theme="light"] .hc-navbar-settings:hover {
+  background: #f1f5f9;
+  color: #0284c7;
+}
+
+html[data-theme="light"] .hc-navbar-settings.is-active {
+  background: #e0f2fe;
+  color: #0369a1;
 }
 
 html[data-theme="light"] .hc-brand {
   color: #0f172a;
+}
+
+html[data-theme="light"] .hc-brand-tag {
+  color: #5c6b80;
+}
+
+html[data-theme="light"] .hc-profile-btn {
+  background: #f8fafc;
+  border-color: #d1dae6;
+  color: #334155;
+}
+
+html[data-theme="light"] .hc-profile-btn:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .hc-profile-btn .caret {
+  color: #64748b;
 }
 
 html[data-theme="light"] .hc-nav-links a {
@@ -503,17 +564,161 @@ html[data-theme="light"] .hc-search input {
 
 html[data-theme="light"] .hc-dropdown {
   background: #fff;
-  border-color: #e2e8f0;
+  border: 1px solid #d8e0eb;
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme="light"] .hc-dropdown a {
+  color: #334155;
+}
+
+html[data-theme="light"] .hc-dropdown a:hover {
+  background: #f0f9ff;
+  color: #0369a1;
 }
 
 html[data-theme="light"] .hc-stat-card {
-  background: #fff;
-  border-color: #e2e8f0;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  border: 1px solid #d8e0eb;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 10px 36px rgba(15, 23, 42, 0.06);
 }
 
-html[data-theme="light"] .hc-stat-value {
+html[data-theme="light"] .hc-stat-card::before {
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(
+    circle,
+    rgba(2, 132, 199, 0.08) 0%,
+    rgba(2, 132, 199, 0) 70%
+  );
+  opacity: 1;
+}
+
+html[data-theme="light"] .hc-stat-card:hover {
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.06),
+    0 16px 44px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .hc-stat-label {
+  color: #64748b;
+}
+
+html[data-theme="light"] .hc-stat-sub {
+  color: #7c8a9a;
+}
+
+/* Default (no accent) — first stat */
+html[data-theme="light"] .hc-stat-card .hc-stat-value {
+  color: #5b21b6;
+}
+
+html[data-theme="light"] .hc-stat-card.accent-blue {
+  background: linear-gradient(145deg, #f8fbff 0%, #ffffff 100%);
+}
+
+html[data-theme="light"] .hc-stat-card.accent-blue::before {
+  background: radial-gradient(
+    circle,
+    rgba(2, 132, 199, 0.14) 0%,
+    rgba(2, 132, 199, 0) 70%
+  );
+}
+
+html[data-theme="light"] .hc-stat-card.accent-blue .hc-stat-value {
+  color: #0369a1;
+}
+
+html[data-theme="light"] .hc-stat-card.accent-rose {
+  background: linear-gradient(145deg, #fffafb 0%, #ffffff 100%);
+}
+
+html[data-theme="light"] .hc-stat-card.accent-rose::before {
+  background: radial-gradient(
+    circle,
+    rgba(225, 29, 72, 0.12) 0%,
+    rgba(225, 29, 72, 0) 70%
+  );
+}
+
+html[data-theme="light"] .hc-stat-card.accent-rose .hc-stat-value {
+  color: #be123c;
+}
+
+html[data-theme="light"] .hc-stat-card.accent-emerald {
+  background: linear-gradient(145deg, #f6fef9 0%, #ffffff 100%);
+}
+
+html[data-theme="light"] .hc-stat-card.accent-emerald::before {
+  background: radial-gradient(
+    circle,
+    rgba(5, 150, 105, 0.12) 0%,
+    rgba(5, 150, 105, 0) 70%
+  );
+}
+
+html[data-theme="light"] .hc-stat-card.accent-emerald .hc-stat-value {
+  color: #047857;
+}
+
+html[data-theme="light"] .hc-stat-card.accent-violet {
+  background: linear-gradient(145deg, #fafaff 0%, #ffffff 100%);
+}
+
+html[data-theme="light"] .hc-stat-card.accent-violet::before {
+  background: radial-gradient(
+    circle,
+    rgba(109, 40, 217, 0.11) 0%,
+    rgba(109, 40, 217, 0) 70%
+  );
+}
+
+html[data-theme="light"] .hc-stat-card.accent-violet .hc-stat-value {
+  color: #6d28d9;
+}
+
+html[data-theme="light"] .hc-stat-card.accent-amber {
+  background: linear-gradient(145deg, #fffdf8 0%, #ffffff 100%);
+}
+
+html[data-theme="light"] .hc-stat-card.accent-amber::before {
+  background: radial-gradient(
+    circle,
+    rgba(217, 119, 6, 0.12) 0%,
+    rgba(217, 119, 6, 0) 70%
+  );
+}
+
+html[data-theme="light"] .hc-stat-card.accent-amber .hc-stat-value {
+  color: #b45309;
+}
+
+html[data-theme="light"] .hc-fab-panel {
+  background: #fff;
+  border: 1px solid #d1dae6;
+  color: #334155;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="light"] .hc-fab-panel h4 {
   color: #0f172a;
+}
+
+html[data-theme="light"] .hc-fab-row a {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+html[data-theme="light"] .hc-fab-row a:hover {
+  background: #bae6fd;
+  color: #0c4a6e;
+}
+
+html[data-theme="light"] .hc-fab-main {
+  color: #fff;
+  box-shadow: 0 10px 32px rgba(14, 165, 233, 0.38);
 }
 
 /* --- Patient records & reports shared --- */
@@ -924,9 +1129,22 @@ html[data-theme="light"] .pr-menu-item--danger:hover {
 }
 
 html[data-theme="light"] .glass-panel {
-  background: #fff;
-  border-color: #e2e8f0;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #ffffff 0%, #fafcfe 100%);
+  border: 1px solid #d1dae6;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.04),
+    0 14px 44px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .glass-panel:hover {
+  border-color: rgba(14, 165, 233, 0.35);
+  box-shadow:
+    0 4px 16px rgba(14, 165, 233, 0.08),
+    0 18px 48px rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme="light"] .pr-lead {
+  color: #5c6b80;
 }
 
 html[data-theme="light"] .pr-search-form {

@@ -6,7 +6,7 @@
 <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:1.25rem;">
     <span class="badge badge-ok" style="font-size:.78rem;">Live workspace</span>
     {% if ml_online %}
-    <span class="badge" style="background:rgba(56,189,248,.15);color:#7dd3fc;font-size:.78rem;">Cloud AI assistant ready</span>
+    <span class="badge badge-info" style="font-size:.78rem;">Cloud AI assistant ready</span>
     {% else %}
     <span class="badge badge-warn" style="font-size:.78rem;">Assistant offline — add API key in Settings</span>
     {% endif %}
@@ -69,7 +69,7 @@
     </div>
 </div>
 
-<p style="color:#64748b;font-size:.88rem;max-width:46rem;line-height:1.55">
+<p class="dashboard-footnote">
     <strong>Pneumonia Detection Using DenseNet121 Feature Extraction and SVM Classification</strong> —
     This dashboard summarizes your saved analyses. Charts run locally in the browser (Chart.js); upload flow stays on your machine unless you enable the optional cloud assistant.
 </p>
@@ -84,6 +84,8 @@
   var lineData = {{ line_values|tojson }};
 
   var legendColor = document.documentElement.getAttribute('data-theme') === 'light' ? '#475569' : '#94a3b8';
+  var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  var gridMajor = isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.08)';
 
   new Chart(document.getElementById('chartPie'), {
     type: 'doughnut',
@@ -109,8 +111,8 @@
     },
     options: {
       scales: {
-        x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } },
-        y: { ticks: { color: '#64748b', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true }
+        x: { ticks: { color: '#64748b' }, grid: { color: gridMajor } },
+        y: { ticks: { color: '#64748b', stepSize: 1 }, grid: { color: gridMajor }, beginAtZero: true }
       },
       plugins: { legend: { display: false } }
     }
@@ -125,7 +127,7 @@
     options: {
       scales: {
         x: { ticks: { color: '#64748b' }, grid: { display: false } },
-        y: { ticks: { color: '#64748b', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true }
+        y: { ticks: { color: '#64748b', stepSize: 1 }, grid: { color: gridMajor }, beginAtZero: true }
       },
       plugins: { legend: { display: false } }
     }

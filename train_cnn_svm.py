@@ -212,13 +212,18 @@ svm_model.fit(X_train, y_train)
 # EVALUATE
 # -------------------------
 y_pred = svm_model.predict(X_test)
-print(confusion_matrix(y_test, y_pred))
+cm = confusion_matrix(y_test, y_pred)
+print(cm)
 
 report = classification_report(y_test, y_pred)
 print(report)
 
+np.savetxt(os.path.join(MODEL_PATH, "confusion_matrix.txt"), cm, fmt="%d")
+
 with open(os.path.join(MODEL_PATH, "classification_report.txt"), "w", encoding="utf-8") as f:
     f.write(report)
+    f.write("\n\nconfusion_matrix (test set, rows=actual, cols=predicted):\n")
+    f.write(np.array2string(cm))
     f.write(
         "\n\nNote: Good test accuracy on YOUR val/test folders does not guarantee "
         "perfect accuracy on random Google images — add diverse training data + "

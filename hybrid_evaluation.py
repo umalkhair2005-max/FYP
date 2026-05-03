@@ -105,8 +105,12 @@ plt.show()
 # -------------------------
 # SAVE CLASSIFICATION REPORT
 # -------------------------
+np.savetxt(os.path.join(MODEL_PATH, "confusion_matrix.txt"), cm, fmt="%d")
+
 with open(os.path.join(MODEL_PATH, "classification_report.txt"), "w") as f:
     f.write(report)
+    f.write("\n\nconfusion_matrix (test set, rows=actual, cols=predicted):\n")
+    f.write(np.array2string(cm))
 
 # -------------------------
 # SAVE MODELS

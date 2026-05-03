@@ -9,6 +9,56 @@ import re
 from typing import Any, Optional
 
 
+def _load_confusion_matrix_txt(models_dir: str) -> Optional[list[list[int]]]:
+    """2×2 counts from models/confusion_matrix.txt (saved by train_cnn_svm)."""
+    path = os.path.join(models_dir, "confusion_matrix.txt")
+    if not os.path.isfile(path):
+        return None
+    try:
+        rows: list[list[int]] = []
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    rows.append([int(parts[0]), int(parts[1])])
+        if len(rows) == 2 and all(len(r) == 2 for r in rows):
+            return rows
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def _infer_cm_from_class_rows(class_rows: list[dict[str, Any]]) -> Optional[list[list[int]]]:
+    """
+    Rebuild 2×2 counts from per-class recall + support when CM file is missing.
+    Layout: [[TN, FP], [FN, TP]] for Normal=0, Pneumonia=1.
+    """
+    by_class: dict[str, dict[str, Any]] = {}
+    for r in class_rows:
+        by_class[str(r.get("class", ""))] = r
+    n = by_class.get("NORMAL")
+    p = by_class.get("PNEUMONIA")
+    if not n or not p:
+        return None
+    try:
+        n0 = int(n["support"])
+        n1 = int(p["support"])
+        r0 = float(n["recall"])
+        r1 = float(p["recall"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if n0 <= 0 or n1 <= 0:
+        return None
+    tn = int(round(r0 * n0))
+    fp = n0 - tn
+    tp = int(round(r1 * n1))
+    fn = n1 - tp
+    return [[tn, fp], [fn, tp]]
+
+
 def load_training_analytics(models_dir: str) -> dict[str, Any]:
     """
     Reads training_history.pkl + classification_report.txt from models folder.
@@ -31,8 +81,13 @@ def load_training_analytics(models_dir: str) -> dict[str, Any]:
         "weighted_recall": None,
         "weighted_f1": None,
         "confusion_matrix": None,
+        "confusion_matrix_inferred": False,
         "class_rows": [],
     }
+
+    cm_file = _load_confusion_matrix_txt(models_dir)
+    if cm_file:
+        out["confusion_matrix"] = cm_file
 
     hp = os.path.join(models_dir, "training_history.pkl")
     if os.path.isfile(hp):
@@ -87,15 +142,16 @@ def load_training_analytics(models_dir: str) -> dict[str, Any]:
                     out[f"{pref}_recall"] = float(block.group(2))
                     out[f"{pref}_f1"] = float(block.group(3))
 
-            flat = re.sub(r"\s+", " ", text)
-            cm = re.search(
-                r"\[\[?\s*(\d+)\s+(\d+)\s*\]\s*\[\s*(\d+)\s+(\d+)\s*\]", flat
-            )
-            if cm:
-                out["confusion_matrix"] = [
-                    [int(cm.group(1)), int(cm.group(2))],
-                    [int(cm.group(3)), int(cm.group(4))],
-                ]
+            if out["confusion_matrix"] is None:
+                flat = re.sub(r"\s+", " ", text)
+                cm = re.search(
+                    r"\[\[?\s*(\d+)\s+(\d+)\s*\]\s*\[\s*(\d+)\s+(\d+)\s*\]", flat
+                )
+                if cm:
+                    out["confusion_matrix"] = [
+                        [int(cm.group(1)), int(cm.group(2))],
+                        [int(cm.group(3)), int(cm.group(4))],
+                    ]
 
             rows = []
             for cls in ("0", "1"):
@@ -118,6 +174,12 @@ def load_training_analytics(models_dir: str) -> dict[str, Any]:
             out["class_rows"] = rows
         except OSError:
             pass
+
+    if out["confusion_matrix"] is None and out["class_rows"]:
+        inferred = _infer_cm_from_class_rows(out["class_rows"])
+        if inferred:
+            out["confusion_matrix"] = inferred
+            out["confusion_matrix_inferred"] = True
 
     return out
 

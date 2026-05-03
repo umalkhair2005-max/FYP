@@ -71,6 +71,7 @@ from werkzeug.utils import secure_filename
 
 import database as db
 from analytics_data import load_training_analytics
+from recompute_eval_metrics import recompute_eval_metrics
 from chatbot import followup_suggestions, get_chat_reply
 
 # -------------------------
@@ -466,6 +467,27 @@ def analytics_page():
         analytics=data,
         model_error=MODEL_ERR,
     )
+
+
+@app.route("/api/analytics/recompute-from-models", methods=["POST"])
+@login_required
+def api_recompute_eval_metrics():
+    """Load saved CNN+SVM, evaluate on dataset/test, refresh confusion matrix files (no training)."""
+    if MODEL_ERR:
+        return jsonify({"ok": False, "error": f"Models unavailable: {MODEL_ERR}"}), 400
+    test_path = os.path.join(ROOT_DIR, "dataset", "test")
+    if not os.path.isdir(test_path):
+        return jsonify(
+            {
+                "ok": False,
+                "error": "dataset/test not found. Add a test split (Normal/Pneumonia folders).",
+            }
+        ), 400
+    try:
+        result = recompute_eval_metrics(MODEL_PATH, test_path)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route("/export/patients.csv")
