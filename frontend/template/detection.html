@@ -97,9 +97,10 @@
         {% endif %}
         <div class="share-dock" style="margin-top:1rem;">
             <h3>Share</h3>
+            <p style="color:#94a3b8;font-size:.82rem;margin:0 0 10px;line-height:1.5;max-width:40rem;"><strong>Copy full report</strong> puts all patient, scan, and AI details in your clipboard. <strong>WhatsApp</strong> shares the same text and, where your device supports it, the official PDF report as an attachment; otherwise the PDF downloads and WhatsApp opens so you can attach the file.</p>
             <div class="share-actions">
-                <button type="button" class="btn-share" id="btnCopy">Copy summary</button>
-                <button type="button" class="btn-share whatsapp" id="btnWa">WhatsApp</button>
+                <button type="button" class="btn-share" id="btnCopy">Copy full report</button>
+                <button type="button" class="btn-share whatsapp" id="btnWa">WhatsApp + PDF</button>
             </div>
         </div>
     </div>
@@ -115,29 +116,173 @@
             <img src="{{ url_for('static', filename=gradcam_path) }}" alt="Grad-CAM">
         </div>
     </div>
+
+    <div class="compare-slider-block dash-compare-slider" style="margin-top:1.25rem;padding:1.25rem 1.35rem;border-radius:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);">
+        <h3 style="font-size:1rem;margin:0 0 6px;color:#f1f5f9;font-weight:700;">Interactive compare</h3>
+        <p style="color:#94a3b8;font-size:.88rem;margin:0 0 14px;line-height:1.55;max-width:42rem;">Drag the <strong>slider</strong> below: all the way <strong>left</strong> = full original, all the way <strong>right</strong> = full Grad-CAM. The vertical line shows the split.</p>
+        <div class="compare-wrap" id="dashCompareWrap" style="--pos:50%">
+            <img class="layer base" src="{{ url_for('static', filename=original_image) }}" alt="">
+            <img class="layer top" src="{{ url_for('static', filename=gradcam_path) }}" alt="">
+            <div class="compare-divider" aria-hidden="true"></div>
+            <div class="compare-labels">
+                <span>Grad-CAM</span>
+                <span>Original</span>
+            </div>
+        </div>
+        <label for="dashCompareRange" class="sr-only">Original versus Grad-CAM blend</label>
+        <input type="range" class="compare-range" id="dashCompareRange" min="0" max="100" value="50" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+    </div>
     {% endif %}
 </section>
 
 <script type="application/json" id="sharePayload">{{ {
   'patient': form_vals.get('patient_name',''),
+  'age': form_vals.get('age',''),
+  'gender': form_vals.get('gender',''),
+  'phone': form_vals.get('phone',''),
+  'address': form_vals.get('address',''),
   'result': result,
-  'confidence': confidence
+  'confidence': confidence,
+  'description': (description or '')|trim,
+  'suggestions': suggestions or [],
+  'img_name': img_name or '',
+  'report_id': ('PR-' ~ (saved_patient_id|string)) if saved_patient_id else '',
+  'report_generated_at': report_generated_at or '',
+  'pdf_url': url_for('download_patient_pdf', patient_id=saved_patient_id) if saved_patient_id else '',
+  'model': 'DenseNet121 feature extraction + SVM (RBF) · Grad-CAM'
 } | tojson }}</script>
 <script>
 (function(){
   var p = document.getElementById('sharePayload');
   if(!p) return;
   var d = JSON.parse(p.textContent);
+
+  function showShareToast(msg) {
+    var toast = document.getElementById('globalToast');
+    if(!toast) return;
+    toast.style.opacity='1';
+    toast.textContent = msg;
+    clearTimeout(showShareToast._t);
+    showShareToast._t = setTimeout(function(){ toast.style.opacity='0'; }, 3200);
+  }
+
+  function safePdfFilename(name) {
+    var s = String(name || 'Patient').replace(/[^\w\s\-]/g, '').trim() || 'Patient';
+    s = s.replace(/[\s\-]+/g, '_').slice(0, 48);
+    return s + '_Report.pdf';
+  }
+
+  function buildDetectionReport() {
+    var lines = [];
+    lines.push('══════════════════════════════════════');
+    lines.push('  CHEST X-RAY AI ANALYSIS REPORT');
+    lines.push('══════════════════════════════════════');
+    lines.push('');
+    if (d.report_id) lines.push('Report ID: ' + d.report_id);
+    if (d.report_generated_at) lines.push('Generated: ' + d.report_generated_at);
+    lines.push('Model: ' + (d.model || '—'));
+    lines.push('');
+    lines.push('--- Patient ---');
+    lines.push('Name: ' + (d.patient || '—'));
+    lines.push('Age: ' + (d.age || '—'));
+    lines.push('Gender: ' + (d.gender || '—'));
+    lines.push('Phone: ' + (d.phone || '—'));
+    lines.push('Address: ' + (d.address || '—'));
+    lines.push('');
+    lines.push('--- Imaging ---');
+    lines.push('File: ' + (d.img_name || '—'));
+    lines.push('');
+    lines.push('--- Classification ---');
+    lines.push('Result: ' + (d.result || '—'));
+    lines.push('Confidence: ' + (d.confidence != null ? d.confidence + '%' : '—'));
+    lines.push('');
+    lines.push('--- Summary ---');
+    lines.push((d.description || '').trim() || '(No summary.)');
+    lines.push('');
+    if (d.suggestions && d.suggestions.length) {
+      lines.push('--- Suggested next steps ---');
+      d.suggestions.forEach(function (s, i) {
+        lines.push((i + 1) + '. ' + s);
+      });
+      lines.push('');
+    }
+    lines.push('---');
+    lines.push('Disclaimer: Educational AI demo only. Not a medical diagnosis.');
+    lines.push('Consult a qualified clinician for clinical decisions.');
+    lines.push('══════════════════════════════════════');
+    return lines.join('\n');
+  }
+
+  function openWhatsAppSmart(txt) {
+    var maxLen = 3500;
+    var t = txt;
+    if (t.length > maxLen) {
+      t = t.slice(0, maxLen - 60) + '\n… (truncated — use Copy full report for the complete text.)';
+    }
+    window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener,noreferrer');
+  }
+
   document.getElementById('btnCopy')?.addEventListener('click', function(){
-    var t = 'Patient: ' + d.patient + '\\nResult: ' + d.result + ' (' + d.confidence + '%)\\nEducational AI only — not a diagnosis.';
-    navigator.clipboard.writeText(t).then(function(){
-      var toast = document.getElementById('globalToast');
-      if(toast){ toast.style.opacity='1'; toast.textContent='Copied.'; setTimeout(function(){ toast.style.opacity='0'; }, 2000); }
+    var text = buildDetectionReport();
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      showShareToast('Clipboard not available in this browser.');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(function(){
+      showShareToast('Full report copied to clipboard.');
+    }).catch(function(){
+      showShareToast('Could not copy — try another browser.');
     });
   });
+
   document.getElementById('btnWa')?.addEventListener('click', function(){
-    var t = 'Chest X-ray AI\\nPatient: ' + d.patient + '\\n' + d.result + ' (' + d.confidence + '%)\\nNot a medical diagnosis.';
-    window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+    var text = buildDetectionReport();
+    var waBody = text + '\n\nTip: If the PDF did not attach, attach the downloaded file from your device.';
+
+    function triggerPdfDownload(blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = safePdfFilename(d.patient);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2500);
+    }
+
+    if (!d.pdf_url) {
+      openWhatsAppSmart(waBody);
+      return;
+    }
+
+    fetch(d.pdf_url, { credentials: 'same-origin' })
+      .then(function(res){
+        if (!res.ok) throw new Error('pdf');
+        return res.blob();
+      })
+      .then(function(blob){
+        var file = new File([blob], safePdfFilename(d.patient), { type: 'application/pdf' });
+        var shareData = {
+          title: 'Chest X-ray AI report',
+          text: 'Chest X-ray AI report (PDF). ' + (d.result || '') + ' · ' + (d.confidence != null ? d.confidence + '%' : '') + '. Educational only — not a diagnosis.',
+          files: [file]
+        };
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          return navigator.share(shareData).catch(function(err){
+            if (err && err.name === 'AbortError') return;
+            triggerPdfDownload(blob);
+            openWhatsAppSmart(waBody);
+            showShareToast('PDF downloaded. WhatsApp opened — attach the PDF if needed.');
+          });
+        }
+        triggerPdfDownload(blob);
+        openWhatsAppSmart(waBody);
+        showShareToast('PDF downloaded. WhatsApp opened — attach the PDF.');
+      })
+      .catch(function(){
+        openWhatsAppSmart(text);
+        showShareToast('Could not load PDF. WhatsApp opened with text — use Reports for PDF.');
+      });
   });
 })();
 </script>
@@ -173,6 +318,49 @@
   {% if result %}
   requestAnimationFrame(function(){ document.getElementById('results')?.scrollIntoView({ behavior:'smooth', block:'start' }); });
   {% endif %}
+
+  var dcWrap = document.getElementById("dashCompareWrap");
+  var dcRange = document.getElementById("dashCompareRange");
+  if (dcWrap && dcRange) {
+    function setDashComparePos(p) {
+      var n = Math.max(0, Math.min(100, Math.round(Number(p))));
+      dcWrap.style.setProperty("--pos", n + "%");
+      dcRange.value = String(n);
+      dcRange.setAttribute("aria-valuenow", String(n));
+    }
+    function posFromClientX(clientX) {
+      var rect = dcWrap.getBoundingClientRect();
+      if (rect.width <= 0) return 50;
+      var x = clientX - rect.left;
+      return Math.round(Math.max(0, Math.min(100, (x / rect.width) * 100)));
+    }
+    dcRange.addEventListener("input", function () {
+      setDashComparePos(dcRange.value);
+    });
+    setDashComparePos(dcRange.value);
+
+    var dashDragging = false;
+    dcWrap.addEventListener("pointerdown", function (e) {
+      if (e.button != null && e.button !== 0) return;
+      dashDragging = true;
+      dcWrap.setPointerCapture(e.pointerId);
+      setDashComparePos(posFromClientX(e.clientX));
+      e.preventDefault();
+    });
+    dcWrap.addEventListener("pointermove", function (e) {
+      if (!dashDragging) return;
+      setDashComparePos(posFromClientX(e.clientX));
+    });
+    function dashCompareEndDrag(e) {
+      if (!dashDragging) return;
+      dashDragging = false;
+      try {
+        dcWrap.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+    dcWrap.addEventListener("pointerup", dashCompareEndDrag);
+    dcWrap.addEventListener("pointercancel", dashCompareEndDrag);
+  }
 })();
 </script>
 {% endblock %}

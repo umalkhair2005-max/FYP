@@ -906,6 +906,20 @@ html[data-theme="light"] .detection-panel-title {
   color: #0f172a;
 }
 
+/* Interactive compare block on detection results (inline dark panel → light theme) */
+html[data-theme="light"] .dash-compare-slider {
+  background: #f8fafc !important;
+  border: 1px solid #d8e0eb !important;
+}
+
+html[data-theme="light"] .dash-compare-slider h3 {
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .dash-compare-slider p {
+  color: #475569 !important;
+}
+
 .detection-submit {
   width: 100%;
   margin-top: 16px;

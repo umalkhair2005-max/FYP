@@ -1,11 +1,14 @@
 import os
 import re
 import json
+import sys
 import uuid
+import socket
 import threading
+import time
 import webbrowser
 from functools import wraps
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -276,6 +279,7 @@ def detection():
         "original_image": None,
         "form_vals": {},
         "saved_patient_id": None,
+        "report_generated_at": None,
         "model_error": MODEL_ERR if not cnn or not svm else None,
     }
 
@@ -375,6 +379,7 @@ def detection():
                 "gradcam_path": rel_grad.replace("\\", "/"),
                 "original_image": rel_original.replace("\\", "/"),
                 "saved_patient_id": pid,
+                "report_generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
             }
         )
 
@@ -855,20 +860,48 @@ def _print_llm_startup_status():
     print("==================================================\n")
 
 
-def _open_local_browser(port: int, delay_sec: float = 1.2) -> None:
-    """Open default browser once the dev server is listening (127.0.0.1)."""
+def _open_local_browser(port: int, timeout_sec: float = 120.0) -> None:
+    """Open default browser once 127.0.0.1:port accepts connections (works after slow TF import)."""
     url = f"http://127.0.0.1:{port}/"
-    threading.Timer(delay_sec, lambda: webbrowser.open(url)).start()
+
+    def _try_open() -> None:
+        if not webbrowser.open(url):
+            if sys.platform == "win32":
+                import subprocess
+
+                subprocess.run(
+                    ["cmd", "/c", "start", "", url],
+                    shell=False,
+                    check=False,
+                )
+
+    def task() -> None:
+        deadline = time.time() + timeout_sec
+        while time.time() < deadline:
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=1.0):
+                    break
+            except OSError:
+                time.sleep(0.2)
+        else:
+            print(f"[browser] Timed out waiting for port {port}; open manually: {url}")
+            return
+        try:
+            _try_open()
+            print(f"[browser] Opened: {url}")
+        except Exception as ex:
+            print(f"[browser] Could not open browser ({ex}). Open manually: {url}")
+
+    threading.Thread(target=task, daemon=True).start()
 
 
 if __name__ == "__main__":
     _print_llm_startup_status()
     port = int(os.environ.get("PORT", "5000"))
     use_reloader = os.environ.get("USE_RELOADER", "1").lower() not in ("0", "false", "no")
-    if use_reloader:
-        # Debug reloader: only the Werkzeug child sets WERKZEUG_RUN_MAIN=true (avoids two browser tabs).
-        if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    no_browser = os.environ.get("NO_BROWSER", "").lower() in ("1", "true", "yes")
+    if not no_browser:
+        # Reloader: only the child process runs the server (avoid duplicate tabs).
+        if not use_reloader or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
             _open_local_browser(port)
-    else:
-        _open_local_browser(port)
     app.run(debug=True, host="0.0.0.0", port=port, use_reloader=use_reloader)
