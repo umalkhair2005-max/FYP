@@ -1,23 +1,56 @@
 {% extends "base_dashboard.html" %}
 {% block title %}Dashboard{% endblock %}
-{% block page_heading %}Overview{% endblock %}
+{% block page_heading %}Clinical overview{% endblock %}
 {% block content %}
-<div class="stat-grid">
-    <div class="stat-card">
-        <div class="stat-card-label">Total patients</div>
-        <div class="stat-card-value">{{ stats.total_patients }}</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:1.25rem;">
+    <span class="badge badge-ok" style="font-size:.78rem;">Live workspace</span>
+    {% if ml_online %}
+    <span class="badge" style="background:rgba(56,189,248,.15);color:#7dd3fc;font-size:.78rem;">Cloud AI assistant ready</span>
+    {% else %}
+    <span class="badge badge-warn" style="font-size:.78rem;">Assistant offline — add API key in Settings</span>
+    {% endif %}
+    <a href="{{ url_for('export_patients_csv') }}" class="btn-primary-dash" style="font-size:.82rem;padding:8px 14px;text-decoration:none;margin-left:auto;">Export CSV</a>
+</div>
+
+<div class="hc-stat-grid">
+    <div class="hc-stat-card">
+        <div class="hc-stat-icon" aria-hidden="true">👥</div>
+        <div class="hc-stat-label">Total patients</div>
+        <div class="hc-stat-value" data-count-to="{{ stats.total_patients|int }}">0</div>
+        <div class="hc-stat-sub">Records you created</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-card-label">Pneumonia cases</div>
-        <div class="stat-card-value">{{ stats.pneumonia_cases }}</div>
+    <div class="hc-stat-card accent-blue">
+        <div class="hc-stat-icon" aria-hidden="true">🔬</div>
+        <div class="hc-stat-label">Total scans</div>
+        <div class="hc-stat-value" data-count-to="{{ stats.total_scans|int }}">0</div>
+        <div class="hc-stat-sub">Completed analyses</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-card-label">Normal cases</div>
-        <div class="stat-card-value">{{ stats.normal_cases }}</div>
+    <div class="hc-stat-card accent-rose">
+        <div class="hc-stat-icon" aria-hidden="true">🫁</div>
+        <div class="hc-stat-label">Pneumonia cases</div>
+        <div class="hc-stat-value" data-count-to="{{ stats.pneumonia_cases|int }}">0</div>
+        <div class="hc-stat-sub">Flagged by AI</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-card-label">Reports generated</div>
-        <div class="stat-card-value">{{ stats.total_reports }}</div>
+    <div class="hc-stat-card accent-emerald">
+        <div class="hc-stat-icon" aria-hidden="true">✓</div>
+        <div class="hc-stat-label">Normal cases</div>
+        <div class="hc-stat-value" data-count-to="{{ stats.normal_cases|int }}">0</div>
+        <div class="hc-stat-sub">No pneumonia signal</div>
+    </div>
+    <div class="hc-stat-card accent-violet">
+        <div class="hc-stat-icon" aria-hidden="true">🎯</div>
+        <div class="hc-stat-label">Model test accuracy</div>
+        <div class="hc-stat-value" style="font-size:1.45rem;">
+            {% if stats.ai_accuracy_pct is not none %}{{ stats.ai_accuracy_pct }}%{% else %}—{% endif %}
+        </div>
+        <div class="hc-stat-sub">From saved classification report</div>
+    </div>
+    <div class="hc-stat-card accent-amber">
+        <div class="hc-stat-icon" aria-hidden="true">📅</div>
+        <div class="hc-stat-label">Scans today</div>
+        <div class="hc-stat-value" data-count-to="{{ stats.scans_today|int }}">0</div>
+        <div class="hc-stat-sub">New analyses today</div>
     </div>
 </div>
 
@@ -36,9 +69,9 @@
     </div>
 </div>
 
-<p style="color:#64748b;font-size:.88rem;max-width:42rem;line-height:1.5">
-    This dashboard summarizes cases stored locally from your <strong>New detection</strong> runs.
-    Charts use Chart.js; data is not sent to any external service except when you use the optional Gemini chatbot.
+<p style="color:#64748b;font-size:.88rem;max-width:46rem;line-height:1.55">
+    <strong>Pneumonia Detection Using DenseNet121 Feature Extraction and SVM Classification</strong> —
+    This dashboard summarizes your saved analyses. Charts run locally in the browser (Chart.js); upload flow stays on your machine unless you enable the optional cloud assistant.
 </p>
 {% endblock %}
 {% block scripts %}
@@ -50,13 +83,15 @@
   var lineLabels = {{ line_labels|tojson }};
   var lineData = {{ line_values|tojson }};
 
+  var legendColor = document.documentElement.getAttribute('data-theme') === 'light' ? '#475569' : '#94a3b8';
+
   new Chart(document.getElementById('chartPie'), {
     type: 'doughnut',
     data: {
       labels: ['Normal', 'Pneumonia'],
       datasets: [{ data: [pieN, pieP], backgroundColor: ['#34d399', '#fb7185'], borderWidth: 0 }]
     },
-    options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, cutout: '58%' }
+    options: { plugins: { legend: { labels: { color: legendColor } } }, cutout: '58%' }
   });
 
   new Chart(document.getElementById('chartLine'), {
@@ -97,4 +132,5 @@
   });
 })();
 </script>
+{{ super() }}
 {% endblock %}

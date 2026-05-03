@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="dash-app" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,33 +7,54 @@
     <meta name="theme-color" content="#0c1222">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/healthcare-ui.css') }}">
     {% block head_extra %}{% endblock %}
 </head>
-<body>
-    <div class="app-shell">
-        <aside class="dash-sidebar" aria-label="Main navigation">
-            <div class="dash-brand">
-                <div class="dash-brand-title">Pneumonia AI Lab</div>
-                <div class="dash-brand-sub">DenseNet121 · SVM · Grad-CAM</div>
+<body class="dash-app-body">
+    <header class="hc-navbar" role="banner">
+        <div class="hc-navbar-inner hc-navbar-inner--compact">
+            <a href="{{ url_for('dashboard') }}" class="hc-brand" aria-label="Pneumonia AI Lab home">
+                <span class="hc-brand-mark" aria-hidden="true">⬡</span>
+                <span class="hc-brand-text">
+                    <span class="hc-brand-title">Pneumonia AI Lab</span>
+                    <span class="hc-brand-tag">DenseNet121 · SVM · Grad-CAM</span>
+                </span>
+            </a>
+            <div class="hc-navbar-tools">
+                <button type="button" class="btn-icon" id="themeToggle" title="Toggle theme" aria-label="Toggle light and dark theme">◐</button>
+                <div class="hc-profile" id="hcProfile">
+                    <button type="button" class="hc-profile-btn" id="hcProfileBtn">
+                        <span>{{ session.user }}</span><span class="caret">▼</span>
+                    </button>
+                    <div class="hc-dropdown">
+                        <a href="{{ url_for('settings_page') }}">Settings</a>
+                        <a href="{{ url_for('logout') }}">Log out</a>
+                    </div>
+                </div>
             </div>
+        </div>
+    </header>
+
+    <div class="app-shell hc-app-shell">
+        <aside class="dash-sidebar" aria-label="Main navigation">
             <nav class="dash-nav">
                 <a href="{{ url_for('dashboard') }}" class="{% if nav == 'dashboard' %}is-active{% endif %}">
                     <span class="dash-nav-icon" aria-hidden="true">📊</span> Dashboard
                 </a>
                 <a href="{{ url_for('detection') }}" class="{% if nav == 'detection' %}is-active{% endif %}">
-                    <span class="dash-nav-icon" aria-hidden="true">🔬</span> New detection
+                    <span class="dash-nav-icon" aria-hidden="true">🔬</span> New Scan
                 </a>
                 <a href="{{ url_for('patients_list') }}" class="{% if nav == 'patients' %}is-active{% endif %}">
-                    <span class="dash-nav-icon" aria-hidden="true">📋</span> Patient records
+                    <span class="dash-nav-icon" aria-hidden="true">📋</span> Patient Records
                 </a>
                 <a href="{{ url_for('reports_page') }}" class="{% if nav == 'reports' %}is-active{% endif %}">
                     <span class="dash-nav-icon" aria-hidden="true">📄</span> Reports
                 </a>
-                <a href="{{ url_for('assistant_page') }}" class="{% if nav == 'chat' %}is-active{% endif %}">
-                    <span class="dash-nav-icon" aria-hidden="true">🤖</span> AI assistant
+                <a href="{{ url_for('analytics_page') }}" class="{% if nav == 'analytics' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">📈</span> AI Analytics
                 </a>
-                <a href="{{ url_for('settings_page') }}" class="{% if nav == 'settings' %}is-active{% endif %}">
-                    <span class="dash-nav-icon" aria-hidden="true">⚙️</span> Settings
+                <a href="{{ url_for('logout') }}" style="margin-top:8px;color:#fca5a5;">
+                    <span class="dash-nav-icon" aria-hidden="true">🚪</span> Logout
                 </a>
             </nav>
         </aside>
@@ -41,12 +62,8 @@
             <header class="dash-topbar">
                 <h1>{% block page_heading %}Dashboard{% endblock %}</h1>
                 <div class="dash-topbar-actions">
-                    <div class="dash-topbar-cluster" role="group" aria-label="Account">
+                    <div class="dash-topbar-cluster" role="group" aria-label="Quick status">
                         <span class="dash-user">Signed in as <strong>{{ session.user }}</strong></span>
-                        <span class="dash-topbar-divider" aria-hidden="true"></span>
-                        <button type="button" class="btn-icon" id="themeToggle" title="Toggle theme" aria-label="Toggle light and dark theme">◐</button>
-                        <span class="dash-topbar-divider" aria-hidden="true"></span>
-                        <a href="{{ url_for('logout') }}" class="btn-logout">Log out</a>
                     </div>
                 </div>
             </header>
@@ -58,7 +75,24 @@
 
     <div class="toast" id="globalToast" role="status" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:12px;background:rgba(15,23,42,.95);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;font-size:.9rem;font-weight:600;z-index:10000;opacity:0;pointer-events:none;transition:opacity .3s;"></div>
 
+    <div class="hc-fab" aria-label="Quick assistant">
+        <div class="hc-fab-panel" id="hcFabPanel">
+            <h4>AI care assistant</h4>
+            <p>Open the full assistant for cloud-powered answers, or review pneumonia basics below.</p>
+            <ul>
+                <li>Chest X-ray AI uses DenseNet121 + SVM.</li>
+                <li>Grad-CAM highlights regions the model emphasized.</li>
+                <li>Not a medical diagnosis — always consult a clinician.</li>
+            </ul>
+            <div class="hc-fab-row">
+                <a href="{{ url_for('assistant_page') }}">Open chat</a>
+            </div>
+        </div>
+        <button type="button" class="hc-fab-main" id="hcFabMain" title="AI assistant quick panel" aria-expanded="false">🤖</button>
+    </div>
+
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/healthcare-shell.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,14 +1,20 @@
 {% extends "base_dashboard.html" %}
 {% block title %}{{ patient.patient_name }}{% endblock %}
-{% block page_heading %}Patient detail{% endblock %}
+{% block page_heading %}{% if nav == 'reports' %}Full AI report{% else %}Patient detail{% endif %}{% endblock %}
 {% block content %}
 
 <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;align-items:center;">
-    <a href="{{ url_for('patients_list') }}" style="color:#94a3b8;font-size:.9rem;">← Back to records</a>
+    {% if nav == 'reports' %}
+    <a href="{{ url_for('reports_page') }}" style="color:#94a3b8;font-size:.9rem;">← Back to reports</a>
+    {% else %}
+    <a href="{{ url_for('patients_list') }}" style="color:#94a3b8;font-size:.9rem;">← Back to patient records</a>
+    {% endif %}
     <a href="{{ url_for('download_patient_pdf', patient_id=patient.id) }}" class="btn-primary-dash" style="text-decoration:none;display:inline-block;">Download PDF</a>
+    <button type="button" class="btn-primary-dash" id="btnPrintDetail" style="background:rgba(99,102,241,0.2);color:#c4b5fd;">Print report</button>
     <button type="button" class="btn-primary-dash" id="btnCopyDetail" style="background:rgba(255,255,255,0.1);color:#e2e8f0;">Copy summary</button>
     <button type="button" class="btn-primary-dash" id="btnWaDetail" style="background:rgba(74,222,128,0.2);color:#86efac;">WhatsApp</button>
     <form method="post" action="{{ url_for('delete_patient', patient_id=patient.id) }}" style="margin-left:auto;" onsubmit="return confirm('Delete this record and files?');">
+        <input type="hidden" name="dest" value="{{ delete_dest|default('patients') }}">
         <button type="submit" class="btn-logout" style="cursor:pointer;border:none;">Delete record</button>
     </form>
 </div>
@@ -82,6 +88,12 @@
   document.getElementById('btnWaDetail')?.addEventListener('click', function(){
     window.open('https://wa.me/?text=' + encodeURIComponent(text()), '_blank');
   });
+  document.getElementById('btnPrintDetail')?.addEventListener('click', function(){ window.print(); });
 })();
 </script>
+{% if request.args.get('print') == '1' %}
+<script>
+window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 400); });
+</script>
+{% endif %}
 {% endblock %}

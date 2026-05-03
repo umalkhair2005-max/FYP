@@ -1,0 +1,72 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Patient Records{% endblock %}
+{% block page_heading %}Patient records{% endblock %}
+{% block content %}
+
+<p class="pr-lead">Manage demographic and contact information for every case stored in SQLite. Upload date reflects when the X-ray was analyzed.</p>
+
+<div class="pr-toolbar">
+    <form class="pr-search-form" method="get" action="{{ url_for('patients_list') }}">
+        <span class="pr-search-icon" aria-hidden="true">🔍</span>
+        <input type="search" name="q" id="prSearch" placeholder="Search by patient name…" value="{{ q or '' }}" aria-label="Search patient records" autocomplete="off">
+        <button type="submit" class="btn-primary-dash">Search</button>
+    </form>
+    <div class="pr-toolbar-actions">
+        <a href="{{ url_for('export_patients_csv') }}" class="pr-btn-secondary">Export CSV</a>
+        <a href="{{ url_for('detection') }}" class="btn-primary-dash" style="text-decoration:none;">New scan</a>
+    </div>
+</div>
+
+<div class="pr-table-wrap glass-panel">
+    <div class="table-wrap" style="margin:0;border:none;background:transparent;">
+        <table class="data-table pr-table">
+            <thead>
+                <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                    <th>Upload date</th>
+                    <th class="pr-th-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in patients %}
+                <tr class="pr-row">
+                    <td><span class="pr-id">PR-{{ row.id }}</span></td>
+                    <td><strong>{{ row.patient_name }}</strong></td>
+                    <td>{{ row.age if row.age is not none else '—' }}</td>
+                    <td>{{ row.gender or '—' }}</td>
+                    <td>{{ row.phone or '—' }}</td>
+                    <td class="pr-date">{{ row.prediction_date[:19]|replace('T',' ') if row.prediction_date else '—' }}</td>
+                    <td class="pr-actions">
+                        <a href="{{ url_for('patient_detail', patient_id=row.id) }}" class="pr-link">View</a>
+                        <form method="post" action="{{ url_for('delete_patient', patient_id=row.id) }}" class="pr-delete-form" onsubmit="return confirm('Delete this patient record and associated files?');">
+                            <input type="hidden" name="dest" value="patients">
+                            <button type="submit" class="pr-link danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="pr-empty">No patient records yet. Start with a <a href="{{ url_for('detection') }}">new scan</a>.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="{{ url_for('patients_list', page=page-1, q=q) }}">← Prev</a>
+    {% endif %}
+    <span>Page {{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('patients_list', page=page+1, q=q) }}">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base_dashboard.html" %}
+{% block title %}AI Reports{% endblock %}
+{% block page_heading %}AI analysis reports{% endblock %}
+{% block content %}
+
+<p class="pr-lead">Every report corresponds to one chest X-ray analysis: DenseNet121 features, SVM classification, and Grad-CAM visualization. Sorted by date (latest first by default).</p>
+
+<div class="pr-toolbar">
+    <form class="pr-search-form" method="get" action="{{ url_for('reports_page') }}">
+        <span class="pr-search-icon" aria-hidden="true">🔍</span>
+        <input type="search" name="q" placeholder="Search by patient name…" value="{{ q or '' }}" aria-label="Search reports">
+        <select name="result" aria-label="Filter by diagnosis">
+            <option value="">All results</option>
+            <option value="NORMAL" {% if result_filter == 'NORMAL' %}selected{% endif %}>NORMAL</option>
+            <option value="PNEUMONIA" {% if result_filter == 'PNEUMONIA' %}selected{% endif %}>PNEUMONIA</option>
+        </select>
+        <select name="sort" aria-label="Sort order">
+            <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Latest first</option>
+            <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Oldest first</option>
+        </select>
+        <button type="submit" class="btn-primary-dash">Apply</button>
+    </form>
+    <a href="{{ url_for('detection') }}" class="btn-primary-dash" style="text-decoration:none;">New scan</a>
+</div>
+
+<div class="report-card-grid">
+    {% for r in reports %}
+    <article class="report-card glass-panel">
+        <div class="report-card-head">
+            <div>
+                <span class="report-card-id">Report PR-{{ r.id }}</span>
+                <h3 class="report-card-name">{{ r.patient_name }}</h3>
+                <p class="report-card-meta">{{ r.prediction_date[:19]|replace('T',' ') if r.prediction_date else '—' }}</p>
+            </div>
+            <span class="badge {% if r.result == 'PNEUMONIA' %}badge-warn{% else %}badge-ok{% endif %}">{{ r.result }}</span>
+        </div>
+        <div class="report-card-images">
+            <div class="report-thumb">
+                <span class="report-thumb-label">X-ray</span>
+                {% if r.image_path %}
+                <img src="{{ url_for('static', filename=r.image_path) }}" alt="X-ray">
+                {% else %}<span class="report-thumb-ph">—</span>{% endif %}
+            </div>
+            <div class="report-thumb">
+                <span class="report-thumb-label">Grad-CAM</span>
+                {% if r.gradcam_path %}
+                <img src="{{ url_for('static', filename=r.gradcam_path) }}" alt="Grad-CAM">
+                {% else %}<span class="report-thumb-ph">—</span>{% endif %}
+            </div>
+        </div>
+        <div class="report-card-metrics">
+            <div><span class="lbl">Confidence</span><span class="val accent">{{ '%.1f'|format(r.confidence) }}%</span></div>
+        </div>
+        {% if r.description %}
+        <div class="report-card-desc">
+            <span class="lbl">Analysis</span>
+            <p>{{ r.description.strip()[:220] }}{% if r.description|length > 220 %}…{% endif %}</p>
+        </div>
+        {% endif %}
+        {% if r.suggestions_list %}
+        <div class="report-card-sug">
+            <span class="lbl">Suggestions</span>
+            <ul>
+                {% for s in r.suggestions_list[:4] %}
+                <li>{{ s }}</li>
+                {% endfor %}
+                {% if r.suggestions_list|length > 4 %}<li>…</li>{% endif %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="report-card-actions">
+            <a href="{{ url_for('patient_detail', patient_id=r.id, src='reports') }}" class="btn-primary-dash" style="text-decoration:none;font-size:0.85rem;padding:8px 14px;">View full report</a>
+            <a href="{{ url_for('download_patient_pdf', patient_id=r.id) }}" class="pr-btn-secondary">PDF</a>
+            <a href="{{ url_for('patient_detail', patient_id=r.id, src='reports', print=1) }}" class="pr-btn-secondary" target="_blank" rel="noopener">Print</a>
+            <button type="button" class="pr-btn-secondary js-share-card" data-name="{{ r.patient_name|e }}" data-result="{{ r.result }}" data-conf="{{ r.confidence }}">Share</button>
+            <form method="post" action="{{ url_for('delete_patient', patient_id=r.id) }}" style="display:inline;" onsubmit="return confirm('Delete this report and files?');">
+                <input type="hidden" name="dest" value="reports">
+                <button type="submit" class="pr-link danger" style="background:none;border:none;cursor:pointer;font-family:inherit;">Delete</button>
+            </form>
+        </div>
+    </article>
+    {% else %}
+    <p class="pr-empty-wide">No reports yet. Run a <a href="{{ url_for('detection') }}">new scan</a> to generate your first AI report.</p>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="{{ url_for('reports_page', page=page-1, q=q, result=result_filter, sort=sort_order) }}">← Prev</a>
+    {% endif %}
+    <span>Page {{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('reports_page', page=page+1, q=q, result=result_filter, sort=sort_order) }}">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+(function(){
+  document.querySelectorAll('.js-share-card').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var t = 'Report — ' + btn.getAttribute('data-name') + '\\nResult: ' + btn.getAttribute('data-result') + ' (' + btn.getAttribute('data-conf') + '%)\\nEducational AI — not a diagnosis.';
+      window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+    });
+  });
+})();
+</script>
+{% endblock %}

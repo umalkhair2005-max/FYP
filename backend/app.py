@@ -70,6 +70,7 @@ from PIL import Image
 from werkzeug.utils import secure_filename
 
 import database as db
+from analytics_data import load_training_analytics
 from chatbot import followup_suggestions, get_chat_reply
 
 # -------------------------
@@ -181,8 +182,8 @@ def safe_report_filename(name):
     return f"{s}_Report.pdf"
 
 
-def weekly_chart_data():
-    raw = db.weekly_detection_counts()
+def weekly_chart_data(for_user: str | None = None):
+    raw = db.weekly_detection_counts(for_user)
     by_date = {r["date"]: r["count"] for r in raw}
     end = date.today()
     labels, values = [], []
@@ -245,12 +246,16 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    stats = db.dashboard_stats()
-    line_labels, line_values = weekly_chart_data()
+    user = session.get("user") or ""
+    stats = db.dashboard_stats(created_by=user)
+    ml = load_training_analytics(MODEL_PATH)
+    stats["ai_accuracy_pct"] = ml.get("accuracy_pct")
+    line_labels, line_values = weekly_chart_data(session.get("user"))
     return render_template(
         "dashboard.html",
         nav="dashboard",
         stats=stats,
+        ml_online=_llm_configured(),
         line_labels=line_labels,
         line_values=line_values,
     )
@@ -375,28 +380,44 @@ def detection():
     return render_template("detection.html", **ctx)
 
 
+def _enrich_report_rows(rows: list) -> list:
+    """Parse suggestions_json for reports UI."""
+    out = []
+    for row in rows:
+        r = dict(row)
+        try:
+            r["suggestions_list"] = json.loads(r.get("suggestions_json") or "[]")
+        except json.JSONDecodeError:
+            r["suggestions_list"] = []
+        out.append(r)
+    return out
+
+
 @app.route("/patients")
 @login_required
 def patients_list():
     q = request.args.get("q", "").strip()
-    result_filter = request.args.get("result", "").strip()
     try:
         page = int(request.args.get("page", 1))
     except ValueError:
         page = 1
-    per_page = 10
-    rows, total = db.list_patients(q=q, result_filter=result_filter, page=page, per_page=per_page)
+    per_page = 12
+    rows, total = db.list_patients(
+        q=q,
+        result_filter="",
+        page=page,
+        per_page=per_page,
+        created_by=session.get("user"),
+        sort_order="desc",
+    )
     total_pages = max(1, (total + per_page - 1) // per_page)
     return render_template(
-        "patients_list.html",
+        "patient_records.html",
         nav="patients",
-        page_title="Patient records",
         patients=rows,
         q=q,
-        result_filter=result_filter,
         page=page,
         total_pages=total_pages,
-        list_endpoint="patients_list",
     )
 
 
@@ -405,23 +426,91 @@ def patients_list():
 def reports_page():
     q = request.args.get("q", "").strip()
     result_filter = request.args.get("result", "").strip()
+    sort_order = request.args.get("sort", "desc").strip().lower()
+    if sort_order not in ("asc", "desc"):
+        sort_order = "desc"
     try:
         page = int(request.args.get("page", 1))
     except ValueError:
         page = 1
-    per_page = 10
-    rows, total = db.list_patients(q=q, result_filter=result_filter, page=page, per_page=per_page)
-    total_pages = max(1, (total + per_page - 1) // per_page)
-    return render_template(
-        "patients_list.html",
-        nav="reports",
-        page_title="Reports library",
-        patients=rows,
+    per_page = 6
+    rows, total = db.list_patients(
         q=q,
         result_filter=result_filter,
         page=page,
+        per_page=per_page,
+        created_by=session.get("user"),
+        sort_order=sort_order,
+    )
+    rows = _enrich_report_rows(rows)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    return render_template(
+        "reports.html",
+        nav="reports",
+        reports=rows,
+        q=q,
+        result_filter=result_filter,
+        sort_order=sort_order,
+        page=page,
         total_pages=total_pages,
-        list_endpoint="reports_page",
+    )
+
+
+@app.route("/analytics")
+@login_required
+def analytics_page():
+    data = load_training_analytics(MODEL_PATH)
+    return render_template(
+        "analytics.html",
+        nav="analytics",
+        analytics=data,
+        model_error=MODEL_ERR,
+    )
+
+
+@app.route("/export/patients.csv")
+@login_required
+def export_patients_csv():
+    import csv
+    from io import StringIO
+
+    buf = StringIO()
+    w = csv.writer(buf)
+    w.writerow(
+        [
+            "Patient ID",
+            "Name",
+            "Age",
+            "Gender",
+            "Phone",
+            "Result",
+            "Confidence_pct",
+            "Prediction_date",
+            "Created_by",
+        ]
+    )
+    user = session.get("user") or ""
+    for r in db.list_patients_for_export(created_by=user):
+        w.writerow(
+            [
+                r.get("id"),
+                r.get("patient_name"),
+                r.get("age"),
+                r.get("gender"),
+                r.get("phone"),
+                r.get("result"),
+                r.get("confidence"),
+                r.get("prediction_date"),
+                r.get("created_by_user"),
+            ]
+        )
+    out = buf.getvalue()
+    return Response(
+        out,
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": "attachment; filename=pneumonia_patient_export.csv"
+        },
     )
 
 
@@ -436,11 +525,15 @@ def patient_detail(patient_id):
         sug = json.loads(p.get("suggestions_json") or "[]")
     except json.JSONDecodeError:
         sug = []
+    src = (request.args.get("src") or "").strip()
+    nav_key = "reports" if src == "reports" else "patients"
+    delete_dest = "reports" if src == "reports" else "patients"
     return render_template(
         "patient_detail.html",
-        nav="patients",
+        nav=nav_key,
         patient=p,
         suggestions=sug,
+        delete_dest=delete_dest,
     )
 
 
@@ -460,6 +553,9 @@ def delete_patient(patient_id):
                     except OSError:
                         pass
         db.delete_patient(patient_id)
+    dest = (request.form.get("dest") or "patients").strip()
+    if dest == "reports":
+        return redirect(url_for("reports_page"))
     return redirect(url_for("patients_list"))
 
 
@@ -483,6 +579,7 @@ def download_patient_pdf(patient_id):
         sug = json.loads(p.get("suggestions_json") or "[]")
     except json.JSONDecodeError:
         sug = []
+    rid = p.get("id")
     pdf_buf = build_patient_report_pdf(
         patient_name=p.get("patient_name") or "",
         age=p.get("age"),
@@ -495,6 +592,7 @@ def download_patient_pdf(patient_id):
         suggestions=sug,
         original_image_abs_path=abs_from_static_rel(p.get("image_path") or ""),
         gradcam_image_abs_path=abs_from_static_rel(p.get("gradcam_path") or ""),
+        report_code=f"PR-{rid}" if rid is not None else None,
     )
     fname = safe_report_filename(p.get("patient_name"))
     return send_file(

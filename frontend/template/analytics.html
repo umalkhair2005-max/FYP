@@ -1,0 +1,166 @@
+{% extends "base_dashboard.html" %}
+{% block title %}AI Analytics{% endblock %}
+{% block page_heading %}AI model analytics{% endblock %}
+{% block content %}
+
+<p class="hc-page-lead" style="color:#94a3b8;font-size:.92rem;max-width:48rem;line-height:1.55;margin-bottom:1.25rem;">
+    Training metrics for <strong>DenseNet121</strong> feature head and <strong>SVM</strong> classifier. Data is read from
+    <code class="settings-code" style="font-size:.85em;">models/training_history.pkl</code> and
+    <code class="settings-code" style="font-size:.85em;">models/classification_report.txt</code> after you run
+    <code class="settings-code" style="font-size:.85em;">train_cnn_svm.py</code>.
+</p>
+
+{% if model_error %}
+<div class="auth-error" role="alert" style="margin-bottom:1rem;">Model load warning: {{ model_error }} (inference may be unavailable until files exist.)</div>
+{% endif %}
+
+<div class="hc-metric-chips" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:1.5rem;">
+    <div class="stat-card" style="padding:12px 16px;min-width:120px;">
+        <div class="stat-card-label">Test accuracy</div>
+        <div class="stat-card-value" style="font-size:1.35rem;">{% if analytics.accuracy_pct is not none %}{{ analytics.accuracy_pct }}%{% else %}—{% endif %}</div>
+    </div>
+    <div class="stat-card" style="padding:12px 16px;min-width:120px;">
+        <div class="stat-card-label">Macro F1</div>
+        <div class="stat-card-value" style="font-size:1.25rem;">{% if analytics.macro_f1 is not none %}{{ '%.3f'|format(analytics.macro_f1) }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="stat-card" style="padding:12px 16px;min-width:120px;">
+        <div class="stat-card-label">Weighted F1</div>
+        <div class="stat-card-value" style="font-size:1.25rem;">{% if analytics.weighted_f1 is not none %}{{ '%.3f'|format(analytics.weighted_f1) }}{% else %}—{% endif %}</div>
+    </div>
+</div>
+
+<div class="chart-grid" style="margin-bottom:1rem;">
+    <div class="chart-card">
+        <h3>Training vs validation accuracy</h3>
+        <canvas id="chartAnalyticsAcc" height="220"></canvas>
+        {% if not analytics.has_history %}<p style="color:#64748b;font-size:.85rem;margin-top:8px;">No training_history.pkl found.</p>{% endif %}
+    </div>
+    <div class="chart-card">
+        <h3>Training vs validation loss</h3>
+        <canvas id="chartAnalyticsLoss" height="220"></canvas>
+        {% if not analytics.has_history %}<p style="color:#64748b;font-size:.85rem;margin-top:8px;">Train the model to populate charts.</p>{% endif %}
+    </div>
+</div>
+
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Confusion matrix (test set)</h3>
+        {% if analytics.confusion_matrix %}
+        <div class="hc-cm-wrap" style="margin-top:12px;">
+            <div class="hc-cm-grid">
+                <div></div>
+                <div class="hc-cm-h">Pred Normal</div>
+                <div class="hc-cm-h">Pred Pneum.</div>
+                <div class="hc-cm-r">Actual Normal</div>
+                <div class="hc-cm-v" style="background:rgba(52,211,153,.45);">{{ analytics.confusion_matrix[0][0] }}</div>
+                <div class="hc-cm-v" style="background:rgba(251,113,133,.35);">{{ analytics.confusion_matrix[0][1] }}</div>
+                <div class="hc-cm-r">Actual Pneum.</div>
+                <div class="hc-cm-v" style="background:rgba(251,113,133,.35);">{{ analytics.confusion_matrix[1][0] }}</div>
+                <div class="hc-cm-v" style="background:rgba(52,211,153,.45);">{{ analytics.confusion_matrix[1][1] }}</div>
+            </div>
+        </div>
+        {% else %}
+        <p style="color:#64748b;font-size:.88rem;">Run training and save classification_report.txt to view the matrix.</p>
+        {% endif %}
+    </div>
+    <div class="chart-card">
+        <h3>Classification metrics</h3>
+        {% if analytics.class_rows %}
+        <div class="table-wrap" style="margin-top:12px;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1</th>
+                        <th>Support</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in analytics.class_rows %}
+                    <tr>
+                        <td>{{ r.class }}</td>
+                        <td>{{ '%.3f'|format(r.precision) }}</td>
+                        <td>{{ '%.3f'|format(r.recall) }}</td>
+                        <td>{{ '%.3f'|format(r.f1) }}</td>
+                        <td>{{ r.support }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color:#64748b;font-size:.88rem;">No per-class rows parsed from report.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if analytics.classification_report_text %}
+<details class="glass-card" style="margin-top:1rem;padding:1rem;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+    <summary style="cursor:pointer;font-weight:600;color:#94a3b8;">Full sklearn classification report (text)</summary>
+    <pre style="margin-top:12px;font-size:0.78rem;color:#cbd5e1;overflow:auto;max-height:280px;white-space:pre-wrap;">{{ analytics.classification_report_text }}</pre>
+</details>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  var hist = {{ {
+    'train_acc': analytics.train_acc,
+    'val_acc': analytics.val_acc,
+    'train_loss': analytics.train_loss,
+    'val_loss': analytics.val_loss,
+    'epochs': analytics.epochs
+  } | tojson }};
+  var tc = document.getElementById('chartAnalyticsAcc');
+  var tl = document.getElementById('chartAnalyticsLoss');
+  var te = hist.epochs && hist.epochs.length ? hist.epochs : (hist.train_acc || []).map(function(_, i){ return i + 1; });
+
+  if (tc && (hist.train_acc && hist.train_acc.length)) {
+    new Chart(tc, {
+      type: 'line',
+      data: {
+        labels: te,
+        datasets: [
+          { label: 'Train acc', data: hist.train_acc, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.12)', fill: true, tension: 0.25 },
+          { label: 'Val acc', data: hist.val_acc, borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)', fill: true, tension: 0.25 }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          y: { min: 0, max: 1.05, ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        },
+        plugins: { legend: { labels: { color: '#94a3b8' } } }
+      }
+    });
+  }
+
+  if (tl && (hist.train_loss && hist.train_loss.length)) {
+    new Chart(tl, {
+      type: 'line',
+      data: {
+        labels: te,
+        datasets: [
+          { label: 'Train loss', data: hist.train_loss, borderColor: '#f472b6', tension: 0.25 },
+          { label: 'Val loss', data: hist.val_loss, borderColor: '#34d399', tension: 0.25 }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: false }
+        },
+        plugins: { legend: { labels: { color: '#94a3b8' } } }
+      }
+    });
+  }
+})();
+</script>
+{{ super() }}
+{% endblock %}

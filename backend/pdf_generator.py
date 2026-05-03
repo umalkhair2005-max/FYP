@@ -1,6 +1,8 @@
 """
 Hospital-style PDF reports using ReportLab.
 """
+from __future__ import annotations
+
 import os
 from io import BytesIO
 from datetime import datetime
@@ -32,6 +34,7 @@ def build_patient_report_pdf(
     suggestions: list,
     original_image_abs_path: str,
     gradcam_image_abs_path: str,
+    report_code: str | None = None,
 ) -> BytesIO:
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -66,8 +69,46 @@ def build_patient_report_pdf(
         leading=14,
     )
 
+    banner = Table(
+        [
+            [
+                Paragraph(
+                    "<b><font color='white'>AI RADIOLOGY REPORT</font></b><br/>"
+                    "<font size='9' color='#e0f2fe'>Pneumonia Detection · DenseNet121 + SVM · Grad-CAM</font>",
+                    ParagraphStyle(
+                        "Ban",
+                        parent=styles["Normal"],
+                        fontSize=14,
+                        leading=18,
+                        alignment=1,
+                    ),
+                )
+            ]
+        ],
+        colWidths=[15 * cm],
+    )
+    banner.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#0369a1")),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("TOPPADDING", (0, 0), (-1, -1), 14),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#0c4a6e")),
+            ]
+        )
+    )
+
     story = []
-    story.append(Paragraph("Pneumonia Detection — Clinical AI Report", title_style))
+    story.append(banner)
+    story.append(Spacer(1, 0.35 * cm))
+    story.append(Paragraph("Clinical AI Report — Chest X-ray Analysis", title_style))
+    story.append(
+        Paragraph(
+            f"<b>Pipeline:</b> DenseNet121 feature extraction + SVM classification · Grad-CAM visualization",
+            body,
+        )
+    )
     story.append(
         Paragraph(
             f"<b>Generated:</b> {esc(datetime.now().strftime('%Y-%m-%d %H:%M'))}",
@@ -77,6 +118,7 @@ def build_patient_report_pdf(
     story.append(Spacer(1, 0.4 * cm))
 
     pdata = [
+        ["Report ID", esc(report_code or "—")],
         ["Patient name", esc(patient_name or "—")],
         ["Age", esc(str(age)) if age is not None else "—"],
         ["Gender", esc(gender or "—")],

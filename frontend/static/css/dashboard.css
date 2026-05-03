@@ -14,32 +14,12 @@
   padding: 1.25rem 0;
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  position: relative;
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-}
-
-.dash-brand {
-  padding: 0 1.25rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: 0.75rem;
-}
-
-.dash-brand-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-  color: #f8fafc;
-}
-
-.dash-brand-sub {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: #64748b;
-  margin-top: 4px;
 }
 
 .dash-nav {
@@ -81,8 +61,10 @@
 .dash-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .dash-topbar {
@@ -187,8 +169,11 @@
 
 .dash-content {
   flex: 1;
+  min-height: 0;
   padding: 1.5rem;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .stat-grid {
@@ -760,12 +745,6 @@ html[data-theme="light"] .form-grid-detection textarea::placeholder {
     padding: 0.75rem;
   }
 
-  .dash-brand {
-    width: 100%;
-    border-bottom: none;
-    padding-bottom: 0.5rem;
-  }
-
   .dash-nav {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1232,4 +1211,99 @@ html[data-theme="light"] .settings-status-label {
 
 html[data-theme="light"] .settings-test-result {
   color: #475569;
+}
+
+/* Dashboard: keep top bar + sidebar fixed; only .dash-content scrolls */
+html.dash-app {
+  height: 100%;
+  overflow: hidden;
+}
+
+body.dash-app-body {
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+body.dash-app-body .hc-navbar {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 200;
+}
+
+body.dash-app-body .app-shell.hc-app-shell,
+body.dash-app-body .app-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* No visible track on the edge — wheel / touch / keyboard still scroll */
+body.dash-app-body .dash-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.dash-app-body .dash-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+body.dash-app-body .dash-sidebar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.dash-app-body .dash-sidebar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+@media (max-width: 900px) {
+  html.dash-app {
+    height: auto;
+  }
+
+  body.dash-app-body {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  body.dash-app-body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  body.dash-app-body .hc-navbar {
+    position: sticky;
+    top: 0;
+  }
+
+  body.dash-app-body .app-shell.hc-app-shell,
+  body.dash-app-body .app-shell {
+    flex: none;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  body.dash-app-body .dash-main {
+    overflow: visible;
+  }
+
+  body.dash-app-body .dash-content {
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
 }

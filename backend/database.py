@@ -5,7 +5,7 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Optional
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -237,8 +237,10 @@ def list_patients(
     result_filter: str = "",
     page: int = 1,
     per_page: int = 10,
+    created_by: Optional[str] = None,
+    sort_order: str = "desc",
 ) -> tuple[list, int]:
-    """Returns (rows as dicts, total_count)."""
+    """Returns (rows as dicts, total_count). sort_order: 'desc' (latest first) or 'asc'."""
     page = max(1, page)
     offset = (page - 1) * per_page
     where = []
@@ -249,7 +251,11 @@ def list_patients(
     if result_filter in ("NORMAL", "PNEUMONIA"):
         where.append("result = ?")
         params.append(result_filter)
+    if created_by is not None and str(created_by).strip():
+        where.append("created_by_user = ?")
+        params.append(created_by.strip())
     wh = (" WHERE " + " AND ".join(where)) if where else ""
+    order_dir = "ASC" if sort_order.lower() == "asc" else "DESC"
 
     with get_db() as conn:
         total = conn.execute(
@@ -259,7 +265,7 @@ def list_patients(
             f"""
             SELECT * FROM patients
             {wh}
-            ORDER BY prediction_date DESC
+            ORDER BY prediction_date {order_dir}
             LIMIT ? OFFSET ?
             """,
             [*params, per_page, offset],
@@ -267,23 +273,75 @@ def list_patients(
     return [dict(r) for r in rows], total
 
 
-def dashboard_stats() -> dict:
+def dashboard_stats(created_by: Optional[str] = None) -> dict:
+    """Aggregate counts; if created_by set, scope to that user's records."""
+    today_iso = date.today().isoformat()
     with get_db() as conn:
-        total_patients = conn.execute(
-            "SELECT COUNT(*) AS c FROM patients"
-        ).fetchone()["c"]
-        pneumonia = conn.execute(
-            "SELECT COUNT(*) AS c FROM patients WHERE result = 'PNEUMONIA'"
-        ).fetchone()["c"]
-        normal = conn.execute(
-            "SELECT COUNT(*) AS c FROM patients WHERE result = 'NORMAL'"
-        ).fetchone()["c"]
+        if created_by is not None and str(created_by).strip():
+            u = created_by.strip()
+            base = "SELECT COUNT(*) AS c FROM patients WHERE created_by_user = ?"
+            total_patients = conn.execute(base, (u,)).fetchone()["c"]
+            pneumonia = conn.execute(
+                base + " AND result = 'PNEUMONIA'", (u,)
+            ).fetchone()["c"]
+            normal = conn.execute(base + " AND result = 'NORMAL'", (u,)).fetchone()[
+                "c"
+            ]
+            scans_today = conn.execute(
+                base + " AND substr(prediction_date, 1, 10) = ?",
+                (u, today_iso),
+            ).fetchone()["c"]
+        else:
+            total_patients = conn.execute(
+                "SELECT COUNT(*) AS c FROM patients"
+            ).fetchone()["c"]
+            pneumonia = conn.execute(
+                "SELECT COUNT(*) AS c FROM patients WHERE result = 'PNEUMONIA'"
+            ).fetchone()["c"]
+            normal = conn.execute(
+                "SELECT COUNT(*) AS c FROM patients WHERE result = 'NORMAL'"
+            ).fetchone()["c"]
+            scans_today = conn.execute(
+                """
+                SELECT COUNT(*) AS c FROM patients
+                WHERE substr(prediction_date, 1, 10) = ?
+                """,
+                (today_iso,),
+            ).fetchone()["c"]
     return {
         "total_patients": total_patients,
         "pneumonia_cases": pneumonia,
         "normal_cases": normal,
         "total_reports": total_patients,
+        "scans_today": scans_today,
+        "total_scans": total_patients,
     }
+
+
+def list_patients_for_export(created_by: Optional[str] = None) -> list[dict]:
+    """Records for CSV export; scope to user when created_by is set."""
+    with get_db() as conn:
+        if created_by is not None and str(created_by).strip():
+            rows = conn.execute(
+                """
+                SELECT id, patient_name, age, gender, phone, result, confidence,
+                       prediction_date, created_by_user
+                FROM patients
+                WHERE created_by_user = ?
+                ORDER BY prediction_date DESC
+                """,
+                (created_by.strip(),),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT id, patient_name, age, gender, phone, result, confidence,
+                       prediction_date, created_by_user
+                FROM patients
+                ORDER BY prediction_date DESC
+                """
+            ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def assistant_chat_list(username: str, limit: int = 100) -> list[dict]:
@@ -326,16 +384,29 @@ def assistant_chat_clear(username: str) -> None:
         conn.execute("DELETE FROM assistant_chat WHERE username = ?", (username.strip(),))
 
 
-def weekly_detection_counts() -> list:
+def weekly_detection_counts(username: Optional[str] = None) -> list:
     """Counts per calendar day (YYYY-MM-DD prefix of ISO timestamp)."""
     with get_db() as conn:
-        rows = conn.execute(
-            """
-            SELECT substr(prediction_date, 1, 10) AS d, COUNT(*) AS c
-            FROM patients
-            GROUP BY substr(prediction_date, 1, 10)
-            ORDER BY d DESC
-            LIMIT 14
-            """
-        ).fetchall()
+        if username is not None and str(username).strip():
+            rows = conn.execute(
+                """
+                SELECT substr(prediction_date, 1, 10) AS d, COUNT(*) AS c
+                FROM patients
+                WHERE created_by_user = ?
+                GROUP BY substr(prediction_date, 1, 10)
+                ORDER BY d DESC
+                LIMIT 14
+                """,
+                (username.strip(),),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT substr(prediction_date, 1, 10) AS d, COUNT(*) AS c
+                FROM patients
+                GROUP BY substr(prediction_date, 1, 10)
+                ORDER BY d DESC
+                LIMIT 14
+                """
+            ).fetchall()
     return [{"date": r["d"], "count": r["c"]} for r in rows]
