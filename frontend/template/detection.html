@@ -63,11 +63,11 @@
 
 {% if result %}
 <section id="results" class="results-section" style="margin-top:8px;">
-    <div class="glass-card" style="padding:1.5rem;">
+    <div class="glass-card detection-results-card" style="padding:1.5rem;">
         <div class="results-header" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;">
             <div>
-                <h2 style="font-size:1.2rem;color:#f1f5f9;">Result — {{ form_vals.get('patient_name','Patient') }}</h2>
-                <p style="color:#94a3b8;font-size:.88rem;">{{ img_name }}</p>
+                <h2 class="detection-results-heading">Result — {{ form_vals.get('patient_name','Patient') }}</h2>
+                <p class="detection-results-meta">{{ img_name }}</p>
             </div>
             <div class="result-pill {% if result == 'PNEUMONIA' %}pneumonia{% else %}normal{% endif %}">
                 {{ result }}
@@ -97,7 +97,7 @@
         {% endif %}
         <div class="share-dock" style="margin-top:1rem;">
             <h3>Share</h3>
-            <p style="color:#94a3b8;font-size:.82rem;margin:0 0 10px;line-height:1.5;max-width:40rem;"><strong>Copy full report</strong> puts all patient, scan, and AI details in your clipboard. <strong>WhatsApp</strong> shares the same text and, where your device supports it, the official PDF report as an attachment; otherwise the PDF downloads and WhatsApp opens so you can attach the file.</p>
+            <p class="detection-share-hint"><strong>Copy full report</strong> puts all patient, scan, and AI details in your clipboard. <strong>WhatsApp</strong> shares the same text and, where your device supports it, the official PDF report as an attachment; otherwise the PDF downloads and WhatsApp opens so you can attach the file.</p>
             <div class="share-actions">
                 <button type="button" class="btn-share" id="btnCopy">Copy full report</button>
                 <button type="button" class="btn-share whatsapp" id="btnWa">WhatsApp + PDF</button>
@@ -117,9 +117,9 @@
         </div>
     </div>
 
-    <div class="compare-slider-block dash-compare-slider" style="margin-top:1.25rem;padding:1.25rem 1.35rem;border-radius:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);">
-        <h3 style="font-size:1rem;margin:0 0 6px;color:#f1f5f9;font-weight:700;">Interactive compare</h3>
-        <p style="color:#94a3b8;font-size:.88rem;margin:0 0 14px;line-height:1.55;max-width:42rem;">Drag the <strong>slider</strong> below: all the way <strong>left</strong> = full original, all the way <strong>right</strong> = full Grad-CAM. The vertical line shows the split.</p>
+    <div class="compare-slider-block dash-compare-slider">
+        <h3>Interactive compare</h3>
+        <p>Drag the <strong>slider</strong> below: all the way <strong>left</strong> = full original, all the way <strong>right</strong> = full Grad-CAM. The vertical line shows the split.</p>
         <div class="compare-wrap" id="dashCompareWrap" style="--pos:50%">
             <img class="layer base" src="{{ url_for('static', filename=original_image) }}" alt="">
             <img class="layer top" src="{{ url_for('static', filename=gradcam_path) }}" alt="">

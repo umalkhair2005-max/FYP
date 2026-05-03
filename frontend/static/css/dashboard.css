@@ -589,23 +589,23 @@ html[data-theme="light"] .dashboard-footnote {
 
 /* Light theme — full shell (dashboard) */
 html[data-theme="light"] {
-  --dash-bg: #eef1f6;
+  --dash-bg: #f1f5f9;
   --dash-surface: #ffffff;
-  --dash-border: #d8dee9;
+  --dash-border: #e2e8f0;
   --dash-text: #0f172a;
-  --dash-muted: #5a6878;
+  --dash-muted: #64748b;
   --dash-accent: #0284c7;
 }
 
 html[data-theme="light"] .app-shell {
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 72px, var(--dash-bg) 180px);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 35%, #f1f5f9 100%);
   color: var(--dash-text);
 }
 
 html[data-theme="light"] .dash-sidebar {
-  background: #fafbfc;
+  background: #ffffff;
   border-right: 1px solid var(--dash-border);
-  box-shadow: 6px 0 32px rgba(15, 23, 42, 0.04);
+  box-shadow: 4px 0 32px rgba(15, 23, 42, 0.04);
 }
 
 html[data-theme="light"] .dash-nav a {
@@ -630,9 +630,11 @@ html[data-theme="light"] .dash-nav a.dash-nav-logout {
 }
 
 html[data-theme="light"] .dash-topbar {
-  background: transparent;
-  border-bottom: none;
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--dash-border);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 
 html[data-theme="light"] .dash-topbar h1 {
@@ -729,6 +731,41 @@ html[data-theme="light"] .badge-info {
   border: 1px solid #bae6fd;
 }
 
+html[data-theme="light"] .stat-card-label {
+  color: #64748b;
+}
+
+html[data-theme="light"] .stat-card-value {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .filters-bar input,
+html[data-theme="light"] .filters-bar select {
+  background: #ffffff;
+  border: 1px solid #c5d0e0;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] .filters-bar input:focus,
+html[data-theme="light"] .filters-bar select:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+html[data-theme="light"] .btn-logout {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c !important;
+}
+
+html[data-theme="light"] .btn-logout:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #991b1b !important;
+}
+
 html[data-theme="light"] .assistant-lead {
   color: #64748b;
 }
@@ -759,6 +796,10 @@ html[data-theme="light"] .assistant-setup-steps {
 
 html[data-theme="light"] .assistant-setup-note {
   color: #64748b;
+}
+
+html[data-theme="light"] .assistant-setup-note a {
+  color: #0284c7;
 }
 
 html[data-theme="light"] .assistant-chat-card {
@@ -907,17 +948,43 @@ html[data-theme="light"] .detection-panel-title {
 }
 
 /* Interactive compare block on detection results (inline dark panel → light theme) */
+.dash-compare-slider {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dash-compare-slider h3 {
+  font-size: 1rem;
+  margin: 0 0 6px;
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+.dash-compare-slider > p {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  margin: 0 0 14px;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
 html[data-theme="light"] .dash-compare-slider {
-  background: #f8fafc !important;
-  border: 1px solid #d8e0eb !important;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 12px 40px rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="light"] .dash-compare-slider h3 {
-  color: #0f172a !important;
+  color: var(--dash-text);
 }
 
-html[data-theme="light"] .dash-compare-slider p {
-  color: #475569 !important;
+html[data-theme="light"] .dash-compare-slider > p {
+  color: var(--dash-muted);
 }
 
 .detection-submit {
@@ -925,6 +992,165 @@ html[data-theme="light"] .dash-compare-slider p {
   margin-top: 16px;
   padding: 14px;
   font-size: 1rem;
+}
+
+/* Patient detail / report view */
+.patient-detail-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+  align-items: center;
+}
+
+.patient-detail-back {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  text-decoration: none;
+}
+
+.patient-detail-back:hover {
+  color: #e2e8f0;
+}
+
+.patient-detail-card h2 {
+  font-size: 1.25rem;
+  color: #f8fafc;
+  margin: 0 0 8px;
+}
+
+.patient-detail-meta {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.patient-detail-confidence {
+  margin-left: 12px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.btn-primary-dash.btn-dash-secondary {
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.2);
+  color: #c4b5fd;
+}
+
+.btn-primary-dash.btn-dash-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.btn-primary-dash.btn-dash-whatsapp {
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.2);
+  color: #86efac;
+}
+
+html[data-theme="light"] .patient-detail-back {
+  color: #64748b;
+}
+
+html[data-theme="light"] .patient-detail-back:hover {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .patient-detail-card h2 {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .patient-detail-meta {
+  color: #64748b;
+}
+
+html[data-theme="light"] .patient-detail-confidence {
+  color: #475569;
+}
+
+html[data-theme="light"] .btn-primary-dash.btn-dash-secondary {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .btn-primary-dash.btn-dash-secondary:hover {
+  filter: brightness(0.97);
+}
+
+html[data-theme="light"] .btn-primary-dash.btn-dash-ghost {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .btn-primary-dash.btn-dash-ghost:hover {
+  background: #f1f5f9;
+}
+
+html[data-theme="light"] .btn-primary-dash.btn-dash-whatsapp {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .btn-primary-dash.btn-dash-whatsapp:hover {
+  background: #dcfce7;
+}
+
+/* Analytics — classification report disclosure */
+.analytics-report-details {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.analytics-report-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+html[data-theme="light"] .analytics-report-details {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .analytics-report-details summary {
+  color: #475569;
+}
+
+.analytics-report-pre {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  overflow: auto;
+  max-height: 280px;
+  white-space: pre-wrap;
+}
+
+html[data-theme="light"] .analytics-report-pre {
+  color: #334155;
+}
+
+.hc-page-lead--muted {
+  color: #94a3b8;
+  font-size: 0.92rem;
+  max-width: 48rem;
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+
+html[data-theme="light"] .hc-page-lead--muted {
+  color: #64748b;
 }
 
 @media (max-width: 900px) {

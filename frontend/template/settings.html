@@ -147,6 +147,7 @@
       if (t !== "light" && t !== "dark") return;
       document.documentElement.setAttribute("data-theme", t);
       try { localStorage.setItem(key, t); } catch (e) {}
+      if (window.pneumoniaSyncThemeColor) window.pneumoniaSyncThemeColor();
       label();
     });
   });

@@ -3,7 +3,7 @@
 {% block page_heading %}AI model analytics{% endblock %}
 {% block content %}
 
-<p class="hc-page-lead" style="color:#94a3b8;font-size:.92rem;max-width:48rem;line-height:1.55;margin-bottom:1.25rem;">
+<p class="hc-page-lead hc-page-lead--muted">
     Training metrics for <strong>DenseNet121</strong> feature head and <strong>SVM</strong> classifier. Charts read from
     <code class="settings-code" style="font-size:.85em;">models/training_history.pkl</code>; test metrics from
     <code class="settings-code" style="font-size:.85em;">models/classification_report.txt</code> and
@@ -132,6 +132,10 @@
   var tc = document.getElementById('chartAnalyticsAcc');
   var tl = document.getElementById('chartAnalyticsLoss');
   var te = hist.epochs && hist.epochs.length ? hist.epochs : (hist.train_acc || []).map(function(_, i){ return i + 1; });
+  var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  var gridColor = isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)';
+  var legendColor = isLight ? '#475569' : '#94a3b8';
+  var tickColor = '#64748b';
 
   if (tc && (hist.train_acc && hist.train_acc.length)) {
     new Chart(tc, {
@@ -146,10 +150,10 @@
       options: {
         responsive: true,
         scales: {
-          x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } },
-          y: { min: 0, max: 1.05, ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+          x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+          y: { min: 0, max: 1.05, ticks: { color: tickColor }, grid: { color: gridColor } }
         },
-        plugins: { legend: { labels: { color: '#94a3b8' } } }
+        plugins: { legend: { labels: { color: legendColor } } }
       }
     });
   }
@@ -167,10 +171,10 @@
       options: {
         responsive: true,
         scales: {
-          x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' } },
-          y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: false }
+          x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+          y: { ticks: { color: tickColor }, grid: { color: gridColor }, beginAtZero: false }
         },
-        plugins: { legend: { labels: { color: '#94a3b8' } } }
+        plugins: { legend: { labels: { color: legendColor } } }
       }
     });
   }
