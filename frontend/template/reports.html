@@ -73,7 +73,7 @@
             <a href="{{ url_for('download_patient_pdf', patient_id=r.id) }}" class="pr-btn-secondary">PDF</a>
             <a href="{{ url_for('patient_detail', patient_id=r.id, src='reports', print=1) }}" class="pr-btn-secondary" target="_blank" rel="noopener">Print</a>
             <button type="button" class="pr-btn-secondary js-share-card" data-name="{{ r.patient_name|e }}" data-result="{{ r.result }}" data-conf="{{ r.confidence }}">Share</button>
-            <form method="post" action="{{ url_for('delete_patient', patient_id=r.id) }}" style="display:inline;" onsubmit="return confirm('Delete this report and files?');">
+            <form method="post" action="{{ url_for('delete_patient', patient_id=r.id) }}" style="display:inline;" data-hc-confirm="Delete this report and all associated files? This cannot be undone." data-hc-confirm-title="Delete report" data-hc-danger>
                 <input type="hidden" name="dest" value="reports">
                 <button type="submit" class="pr-link danger" style="background:none;border:none;cursor:pointer;font-family:inherit;">Delete</button>
             </form>

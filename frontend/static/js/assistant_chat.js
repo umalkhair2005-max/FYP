@@ -103,14 +103,30 @@
 
   if (clearBtn) {
     clearBtn.addEventListener("click", function () {
-      if (!confirm("Clear this conversation? This cannot be undone.")) return;
-      fetch("/api/chat/history", { method: "DELETE" })
-        .then(function () {
-          renderHistory([]);
-        })
-        .catch(function () {
-          appendBubble("Could not clear history.", "bot");
-        });
+      function runClear() {
+        fetch("/api/chat/history", { method: "DELETE" })
+          .then(function () {
+            renderHistory([]);
+          })
+          .catch(function () {
+            appendBubble("Could not clear history.", "bot");
+          });
+      }
+      if (typeof window.showHcConfirm === "function") {
+        window
+          .showHcConfirm({
+            title: "Clear conversation",
+            message: "Clear this conversation? This cannot be undone.",
+            variant: "danger",
+            confirmLabel: "Clear",
+            cancelLabel: "Cancel",
+          })
+          .then(function (ok) {
+            if (ok) runClear();
+          });
+      } else if (window.confirm("Clear this conversation? This cannot be undone.")) {
+        runClear();
+      }
     });
   }
 

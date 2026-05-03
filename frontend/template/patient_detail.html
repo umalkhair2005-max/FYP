@@ -13,7 +13,7 @@
     <button type="button" class="btn-primary-dash" id="btnPrintDetail" style="background:rgba(99,102,241,0.2);color:#c4b5fd;">Print report</button>
     <button type="button" class="btn-primary-dash" id="btnCopyDetail" style="background:rgba(255,255,255,0.1);color:#e2e8f0;">Copy summary</button>
     <button type="button" class="btn-primary-dash" id="btnWaDetail" style="background:rgba(74,222,128,0.2);color:#86efac;">WhatsApp</button>
-    <form method="post" action="{{ url_for('delete_patient', patient_id=patient.id) }}" style="margin-left:auto;" onsubmit="return confirm('Delete this record and files?');">
+    <form method="post" action="{{ url_for('delete_patient', patient_id=patient.id) }}" style="margin-left:auto;" data-hc-confirm="Delete this patient record and associated files? This cannot be undone." data-hc-confirm-title="Delete record" data-hc-danger>
         <input type="hidden" name="dest" value="{{ delete_dest|default('patients') }}">
         <button type="submit" class="btn-logout" style="cursor:pointer;border:none;">Delete record</button>
     </form>

@@ -53,6 +53,10 @@
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2);
 }
 
+.dash-nav a.dash-nav-logout {
+  margin-top: 8px;
+}
+
 .dash-nav-icon {
   font-size: 1.1rem;
   opacity: 0.9;

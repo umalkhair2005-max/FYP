@@ -41,11 +41,16 @@
                     <td>{{ row.phone or '—' }}</td>
                     <td class="pr-date">{{ row.prediction_date[:19]|replace('T',' ') if row.prediction_date else '—' }}</td>
                     <td class="pr-actions">
-                        <a href="{{ url_for('patient_detail', patient_id=row.id) }}" class="pr-link">View</a>
-                        <form method="post" action="{{ url_for('delete_patient', patient_id=row.id) }}" class="pr-delete-form" onsubmit="return confirm('Delete this patient record and associated files?');">
-                            <input type="hidden" name="dest" value="patients">
-                            <button type="submit" class="pr-link danger">Delete</button>
-                        </form>
+                        <div class="pr-row-menu">
+                            <button type="button" class="pr-menu-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="Actions for {{ row.patient_name|e }}">⋮</button>
+                            <div class="pr-menu-dropdown" role="menu">
+                                <a href="{{ url_for('patient_detail', patient_id=row.id) }}" class="pr-menu-item" role="menuitem">View</a>
+                                <form id="pr-del-{{ row.id }}" method="post" action="{{ url_for('delete_patient', patient_id=row.id) }}" class="pr-menu-delete-form" data-hc-confirm="Delete this patient record and associated files? This cannot be undone." data-hc-confirm-title="Delete patient record" data-hc-danger>
+                                    <input type="hidden" name="dest" value="patients">
+                                </form>
+                                <button type="submit" form="pr-del-{{ row.id }}" class="pr-menu-item pr-menu-item--danger" role="menuitem">Delete</button>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 {% else %}
@@ -69,4 +74,8 @@
     {% endif %}
 </div>
 {% endif %}
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/pr-row-menu.js') }}"></script>
 {% endblock %}

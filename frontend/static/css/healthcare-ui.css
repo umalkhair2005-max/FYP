@@ -670,6 +670,136 @@ html[data-theme="light"] .hc-stat-value {
   text-align: right;
 }
 
+/* --- Patient table row ⋮ menu --- */
+.pr-row-menu {
+  position: relative;
+  display: inline-flex;
+  justify-content: flex-end;
+  vertical-align: middle;
+}
+
+.pr-menu-trigger {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  font-size: 1.2rem;
+  line-height: 1;
+  letter-spacing: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.pr-menu-trigger:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #e2e8f0;
+}
+
+.pr-row-menu.is-open .pr-menu-trigger {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+
+.pr-menu-dropdown {
+  display: none;
+  min-width: 148px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.pr-row-menu.is-open .pr-menu-dropdown {
+  display: block;
+  animation: hcFade 0.2s ease;
+}
+
+.pr-menu-item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+a.pr-menu-item {
+  color: #7dd3fc;
+}
+
+a.pr-menu-item:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #e0f2fe;
+}
+
+button.pr-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+.pr-menu-item--danger {
+  color: #fca5a5 !important;
+}
+
+.pr-menu-item--danger:hover {
+  background: rgba(248, 113, 113, 0.14) !important;
+  color: #fecaca !important;
+}
+
+.pr-menu-delete-form {
+  display: none;
+}
+
+html[data-theme="light"] .pr-menu-trigger {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+html[data-theme="light"] .pr-menu-trigger:hover,
+html[data-theme="light"] .pr-row-menu.is-open .pr-menu-trigger {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+html[data-theme="light"] .pr-menu-dropdown {
+  background: #fff;
+  border-color: #e2e8f0;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="light"] a.pr-menu-item {
+  color: #0284c7;
+}
+
+html[data-theme="light"] .pr-menu-item--danger {
+  color: #dc2626 !important;
+}
+
+html[data-theme="light"] .pr-menu-item--danger:hover {
+  background: rgba(254, 226, 226, 0.9) !important;
+  color: #991b1b !important;
+}
+
 /* --- Reports grid --- */
 .report-card-grid {
   display: grid;
@@ -817,4 +947,194 @@ html[data-theme="light"] .report-card-name {
 
 html[data-theme="light"] .report-thumb {
   border-color: #e2e8f0;
+}
+
+/* —— Themed confirm modal (VIP shell) —— */
+.hc-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.hc-confirm.is-open {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.hc-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(56, 189, 248, 0.12), transparent 55%),
+    rgba(2, 6, 15, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.hc-confirm-panel {
+  position: relative;
+  width: min(100%, 420px);
+  margin: auto;
+  padding: 1.75rem 1.75rem 1.5rem;
+  border-radius: 22px;
+  background: linear-gradient(
+    155deg,
+    rgba(15, 23, 42, 0.96) 0%,
+    rgba(12, 18, 38, 0.98) 45%,
+    rgba(15, 23, 42, 0.96) 100%
+  );
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 28px 90px rgba(0, 0, 0, 0.65),
+    0 0 80px rgba(56, 189, 248, 0.08);
+  transform: translateY(12px) scale(0.98);
+  opacity: 0;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s ease;
+}
+
+.hc-confirm.is-open .hc-confirm-panel {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.hc-confirm-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.65rem;
+}
+
+.hc-confirm-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font-size: 1.25rem;
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.15), rgba(99, 102, 241, 0.12));
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.12);
+}
+
+.hc-confirm-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: center;
+  color: #f1f5f9;
+}
+
+.hc-confirm-body {
+  margin: 0 0 1.35rem;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.hc-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.hc-confirm-btn {
+  flex: 1 1 auto;
+  min-width: 120px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
+}
+
+.hc-confirm-btn:active {
+  transform: scale(0.98);
+}
+
+.hc-confirm-btn-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.hc-confirm-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f1f5f9;
+}
+
+.hc-confirm-btn-ok {
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 55%, #8b5cf6 100%);
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 8px 28px rgba(56, 189, 248, 0.25);
+}
+
+.hc-confirm-btn-ok:hover {
+  filter: brightness(1.06);
+}
+
+.hc-confirm--danger .hc-confirm-icon {
+  background: linear-gradient(145deg, rgba(251, 113, 133, 0.18), rgba(248, 113, 113, 0.1));
+  border-color: rgba(251, 113, 133, 0.35);
+  box-shadow: 0 8px 24px rgba(251, 113, 133, 0.12);
+}
+
+.hc-confirm--danger .hc-confirm-btn-ok {
+  background: linear-gradient(135deg, #e11d48 0%, #dc2626 50%, #ea580c 100%);
+  border-color: rgba(251, 113, 133, 0.45);
+  box-shadow: 0 8px 28px rgba(225, 29, 72, 0.35);
+}
+
+body.hc-confirm-open {
+  overflow: hidden;
+}
+
+html[data-theme="light"] .hc-confirm-backdrop {
+  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(14, 165, 233, 0.08), transparent 55%),
+    rgba(15, 23, 42, 0.45);
+}
+
+html[data-theme="light"] .hc-confirm-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: #e2e8f0;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 28px 90px rgba(15, 23, 42, 0.18);
+}
+
+html[data-theme="light"] .hc-confirm-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .hc-confirm-body {
+  color: #64748b;
+}
+
+html[data-theme="light"] .hc-confirm-btn-cancel {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+html[data-theme="light"] .hc-confirm-btn-cancel:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }

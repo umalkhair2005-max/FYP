@@ -7,6 +7,7 @@
     <meta name="theme-color" content="#0c1222">
     <meta name="description" content="AI-assisted chest X-ray screening with Grad-CAM — not a medical diagnosis.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/healthcare-ui.css') }}">
 </head>
 <body{% if result %} data-scroll-to-results{% endif %}>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -403,5 +404,7 @@
             }
         })();
     </script>
+    <script src="{{ url_for('static', filename='js/hc-confirm.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/healthcare-shell.js') }}"></script>
 </body>
 </html>

@@ -88,4 +88,35 @@
       animateValue(el, v, 900);
     }, 200);
   });
+
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("a");
+    if (!a) return;
+    try {
+      var path = new URL(a.href, window.location.href).pathname.replace(/\/+$/, "");
+      if (!/\/logout$/.test(path)) return;
+    } catch (err) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    function go() {
+      window.location.href = a.href;
+    }
+    if (typeof window.showHcConfirm !== "function") {
+      if (window.confirm("Are you sure you want to log out?")) go();
+      return;
+    }
+    window
+      .showHcConfirm({
+        title: "Sign out",
+        message: "Are you sure you want to log out?",
+        confirmLabel: "Log out",
+        cancelLabel: "Stay signed in",
+        variant: "default",
+      })
+      .then(function (ok) {
+        if (ok) go();
+      });
+  });
 })();

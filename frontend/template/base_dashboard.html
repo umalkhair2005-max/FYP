@@ -53,7 +53,10 @@
                 <a href="{{ url_for('analytics_page') }}" class="{% if nav == 'analytics' %}is-active{% endif %}">
                     <span class="dash-nav-icon" aria-hidden="true">📈</span> AI Analytics
                 </a>
-                <a href="{{ url_for('logout') }}" style="margin-top:8px;color:#fca5a5;">
+                <a href="{{ url_for('settings_page') }}" class="{% if nav == 'settings' %}is-active{% endif %}">
+                    <span class="dash-nav-icon" aria-hidden="true">⚙️</span> Settings
+                </a>
+                <a href="{{ url_for('logout') }}" class="dash-nav-logout">
                     <span class="dash-nav-icon" aria-hidden="true">🚪</span> Logout
                 </a>
             </nav>
@@ -92,6 +95,7 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/hc-confirm.js') }}"></script>
     <script src="{{ url_for('static', filename='js/healthcare-shell.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
