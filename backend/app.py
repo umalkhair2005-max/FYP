@@ -162,6 +162,55 @@ def save_gradcam(img_path, heatmap, output_path, alpha=0.40):
     return output_path
 
 
+def gradcam_lung_location_summary(heatmap: np.ndarray, pneumonia: bool) -> str:
+    """
+    Approximate where Grad-CAM peaks on the feature map, mapped to patient-sided lung zones.
+    Standard PA chest radiograph: patient's RIGHT lung appears on the VIEWER'S LEFT (small x).
+    This is an educational heuristic, not a radiology diagnosis.
+    """
+    h = np.asarray(heatmap, dtype=np.float64)
+    if h.size == 0:
+        return ""
+    if h.ndim > 2:
+        h = np.squeeze(h)
+    if h.ndim != 2:
+        return ""
+    h = np.maximum(h, 0.0)
+    total = float(np.sum(h))
+    if total < 1e-12:
+        return ""
+    H, W = h.shape
+    rows, cols = np.indices((H, W))
+    cy = float(np.sum(h * rows)) / total
+    cx = float(np.sum(h * cols)) / total
+    x_frac = cx / max(W - 1, 1)
+    y_frac = cy / max(H - 1, 1)
+    # Patient anatomy vs image columns (PA)
+    if x_frac < 0.5:
+        side_pt = "right lung"
+        side_img = "left side of the image"
+    else:
+        side_pt = "left lung"
+        side_img = "right side of the image"
+    if y_frac < 0.36:
+        zone = "upper lung zone"
+    elif y_frac > 0.64:
+        zone = "lower lung zone"
+    else:
+        zone = "mid lung field"
+
+    if pneumonia:
+        return (
+            f"Grad-CAM attention peaks in the {zone} of the {side_pt} "
+            f"(roughly the {side_img} on a typical upright PA view: the patient's right lung appears on the left side of the image). "
+            "This only shows where the neural network focused, not the exact outline of an infection."
+        )
+    return (
+        f"Strongest model attention fell in the {zone}, weighted toward the {side_pt}. "
+        "With a normal label here, that only shows where the CNN looked, not a hidden abnormality."
+    )
+
+
 def unique_upload_name(original_filename):
     ext = os.path.splitext(secure_filename(original_filename or ""))[1].lower()
     if ext not in (".png", ".jpg", ".jpeg", ".webp", ".bmp"):
@@ -311,38 +360,48 @@ def detection():
         prob = svm.predict_proba(features)[0]
         confidence = round(float(max(prob)) * 100, 2)
 
+        gradcam_filename = f"gradcam_{fname}"
+        gradcam_fs = os.path.join(app.config["UPLOAD_FOLDER"], gradcam_filename)
+        heatmap = get_gradcam(full_cnn, img_array)
+        region_note = gradcam_lung_location_summary(heatmap, prediction == 1)
+
         if prediction == 1:
             result = "PNEUMONIA"
             description = (
-                "Pneumonia detected. This condition may affect the lungs and breathing system. "
-                "Please consult a healthcare professional for proper medical evaluation."
+                "The AI model flags a pneumonia-type pattern on this chest X-ray at the confidence shown. "
+                + (region_note + " " if region_note else "")
+                + "Pneumonia can affect breathing and oxygenation; only a licensed clinician can confirm the diagnosis "
+                "after history, examination, and sometimes labs or follow-up imaging."
             )
             suggestions = [
-                "Consult a chest specialist immediately.",
-                "Take proper rest and stay hydrated.",
-                "Avoid smoking and cold environments.",
-                "Monitor fever and breathing difficulty.",
-                "Use prescribed medicines only.",
-                "Seek emergency care if symptoms worsen.",
+                "If you have severe shortness of breath, chest pain, confusion, bluish lips, or fainting — call emergency services or go to the ER now.",
+                "Arrange an in-person medical review today or within 24–48 hours if symptoms are milder but persistent (fever, cough, fatigue). Bring this image and report.",
+                "Until you are assessed: prioritize rest, sip fluids if you are not on a fluid restriction, and avoid smoke, vaping, and dusty air.",
+                "If you own a home pulse oximeter, log resting oxygen and heart rate twice daily to share with your clinician (not a substitute for care).",
+                "Do not start or borrow antibiotics on your own — choice and duration require a prescription after proper evaluation.",
+                "Track temperature, breathing comfort, and sputum colour; a short written timeline helps doctors decide on tests or admission.",
+                "Mention pregnancy, immune-suppressing medicines, recent travel, or chronic heart/lung disease at triage — these change risk and urgency.",
+                "Remember: AI can miss or over-call findings; formal radiology interpretation and clinical correlation remain essential.",
             ]
         else:
             result = "NORMAL"
             description = (
-                "No pneumonia detected. The chest X-ray appears normal. "
-                "Maintain a healthy lifestyle to keep lungs healthy."
+                "Congratulations — at this model sensitivity the scan does not show a pneumonia pattern "
+                "that the AI was trained to flag. That is reassuring for this single image and moment in time. "
+                + (region_note + " " if region_note else "")
+                + "Keep healthy habits and still see a clinician if new respiratory symptoms appear, since no test is perfect."
             )
             suggestions = [
-                "Maintain a healthy diet.",
-                "Exercise regularly.",
-                "Avoid smoking and pollution.",
-                "Drink enough water.",
-                "Get regular medical checkups.",
-                "Follow proper hygiene practices.",
+                "Celebrate the good result, then keep routine follow-ups with your primary care clinician if you have asthma, COPD, heart disease, or are on immune-modulating drugs.",
+                "Support lung health with regular aerobic activity you can tolerate (for example brisk walking) and gradual strength training as advised.",
+                "Avoid tobacco and second-hand smoke; ask your care team about cessation programs or nicotine replacement if you smoke.",
+                "On days with poor outdoor air quality, limit heavy exertion outdoors — especially if you already have sensitive lungs.",
+                "Stay up to date on influenza and clinician-recommended pneumococcal vaccines for your age and conditions.",
+                "Hydration, balanced meals, and consistent sleep help recovery from minor colds and overall resilience.",
+                "If a new cough, fever, or breathlessness develops after this scan, seek fresh evaluation — chest films reflect one point in time.",
+                "Use this tool as education only; it does not replace physical exam, listening to lungs, or other tests your doctor may order.",
             ]
 
-        gradcam_filename = f"gradcam_{fname}"
-        gradcam_fs = os.path.join(app.config["UPLOAD_FOLDER"], gradcam_filename)
-        heatmap = get_gradcam(full_cnn, img_array)
         save_gradcam(img_path, heatmap, gradcam_fs)
 
         rel_original = static_path_from_fs(img_path)
