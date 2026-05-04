@@ -72,7 +72,7 @@
             <a href="{{ url_for('patient_detail', patient_id=r.id, src='reports') }}" class="btn-primary-dash" style="text-decoration:none;font-size:0.85rem;padding:8px 14px;">View full report</a>
             <a href="{{ url_for('download_patient_pdf', patient_id=r.id) }}" class="pr-btn-secondary">PDF</a>
             <a href="{{ url_for('patient_detail', patient_id=r.id, src='reports', print=1) }}" class="pr-btn-secondary" target="_blank" rel="noopener">Print</a>
-            <button type="button" class="pr-btn-secondary js-share-card" data-name="{{ r.patient_name|e }}" data-result="{{ r.result }}" data-conf="{{ r.confidence }}">Share</button>
+            <button type="button" class="pr-btn-secondary js-share-card" data-patient-id="{{ r.id }}" data-name="{{ r.patient_name|e }}" data-result="{{ r.result }}" data-conf="{{ r.confidence }}" data-pdf-url="{{ url_for('download_patient_pdf', patient_id=r.id) }}" data-view-url="{{ url_for('patient_detail', patient_id=r.id, src='reports', _external=True) }}">Share</button>
             <form method="post" action="{{ url_for('delete_patient', patient_id=r.id) }}" style="display:inline;" data-hc-confirm="Delete this report and all associated files? This cannot be undone." data-hc-confirm-title="Delete report" data-hc-danger>
                 <input type="hidden" name="dest" value="reports">
                 <button type="submit" class="pr-link danger" style="background:none;border:none;cursor:pointer;font-family:inherit;">Delete</button>
@@ -96,12 +96,150 @@
 </div>
 {% endif %}
 
+<div id="shareFallback" class="share-fallback" hidden>
+    <div class="share-fallback__backdrop" id="shareFallbackBackdrop" aria-hidden="true"></div>
+    <div class="share-fallback__panel" role="dialog" aria-modal="true" aria-labelledby="shareFallbackTitle">
+        <h4 id="shareFallbackTitle" class="share-fallback__title">Share report</h4>
+        <p class="share-fallback__lead">Pick where to send this report. You can also download the PDF and attach it in email or chat.</p>
+        <div class="share-fallback__actions">
+            <a class="share-fallback__btn share-fallback__btn--wa" id="shareFbWa" href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a class="share-fallback__btn share-fallback__btn--mail" id="shareFbMail" href="#">Email</a>
+            <button type="button" class="share-fallback__btn share-fallback__btn--copy" id="shareFbCopy">Copy text</button>
+            <a class="share-fallback__btn share-fallback__btn--pdf" id="shareFbPdf" href="#" download>Download PDF</a>
+        </div>
+        <button type="button" class="share-fallback__close" id="shareFbClose">Close</button>
+    </div>
+</div>
+
 <script>
-(function(){
-  document.querySelectorAll('.js-share-card').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var t = 'Report — ' + btn.getAttribute('data-name') + '\\nResult: ' + btn.getAttribute('data-result') + ' (' + btn.getAttribute('data-conf') + '%)\\nEducational AI — not a diagnosis.';
-      window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+(function () {
+  var modal = document.getElementById('shareFallback');
+  var backdrop = document.getElementById('shareFallbackBackdrop');
+  var elWa = document.getElementById('shareFbWa');
+  var elMail = document.getElementById('shareFbMail');
+  var elCopy = document.getElementById('shareFbCopy');
+  var elPdf = document.getElementById('shareFbPdf');
+  var elClose = document.getElementById('shareFbClose');
+  var lastText = '';
+
+  function toast(msg) {
+    var t = document.getElementById('globalToast');
+    if (!t) return;
+    t.style.opacity = '1';
+    t.textContent = msg;
+    clearTimeout(toast._x);
+    toast._x = setTimeout(function () { t.style.opacity = '0'; }, 2600);
+  }
+
+  function safePdfName(name) {
+    var s = String(name || 'Patient').replace(/[^\w\s\-]/g, '').trim() || 'Patient';
+    s = s.replace(/[\s\-]+/g, '_').slice(0, 48);
+    return s + '_Report.pdf';
+  }
+
+  function buildShareText(btn) {
+    var name = btn.getAttribute('data-name') || '';
+    var res = btn.getAttribute('data-result') || '';
+    var conf = btn.getAttribute('data-conf') || '';
+    var id = btn.getAttribute('data-patient-id') || '';
+    var view = btn.getAttribute('data-view-url') || '';
+    var lines = [];
+    lines.push('Pneumonia AI Lab — Chest X-ray AI report');
+    lines.push('Report ID: PR-' + id);
+    lines.push('Patient: ' + name);
+    lines.push('Result: ' + res + ' (' + conf + '%)');
+    if (view) lines.push('Open report: ' + view);
+    lines.push('');
+    lines.push('Educational AI only — not a medical diagnosis.');
+    return lines.join('\n');
+  }
+
+  function openFallback(text, pdfUrl, patientName) {
+    lastText = text;
+    elWa.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+    elMail.href =
+      'mailto:?subject=' +
+      encodeURIComponent('Chest X-ray AI report — ' + (patientName || 'Patient')) +
+      '&body=' +
+      encodeURIComponent(text);
+    if (pdfUrl) {
+      elPdf.href = pdfUrl;
+      elPdf.setAttribute('download', safePdfName(patientName));
+      elPdf.style.display = '';
+    } else {
+      elPdf.removeAttribute('href');
+      elPdf.removeAttribute('download');
+      elPdf.style.display = 'none';
+    }
+    modal.removeAttribute('hidden');
+  }
+
+  function closeFallback() {
+    modal.setAttribute('hidden', '');
+  }
+
+  backdrop.addEventListener('click', closeFallback);
+  elClose.addEventListener('click', closeFallback);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) closeFallback();
+  });
+  elCopy.addEventListener('click', function () {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      toast('Clipboard not available.');
+      return;
+    }
+    navigator.clipboard.writeText(lastText).then(function () {
+      toast('Summary copied.');
+      closeFallback();
+    }).catch(function () {
+      toast('Could not copy.');
+    });
+  });
+
+  document.querySelectorAll('.js-share-card').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = buildShareText(btn);
+      var pdfUrl = btn.getAttribute('data-pdf-url') || '';
+      var patientName = btn.getAttribute('data-name') || '';
+      var title = 'Chest X-ray report — ' + (patientName || 'Patient');
+
+      function fallback() {
+        openFallback(text, pdfUrl, patientName);
+      }
+
+      if (!navigator.share) {
+        fallback();
+        return;
+      }
+
+      function afterShareFail(err) {
+        if (err && err.name === 'AbortError') return;
+        fallback();
+      }
+
+      if (!pdfUrl) {
+        navigator.share({ title: title, text: text }).catch(afterShareFail);
+        return;
+      }
+
+      fetch(pdfUrl, { credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('pdf');
+          return r.blob();
+        })
+        .then(function (blob) {
+          var file = new File([blob], safePdfName(patientName), { type: 'application/pdf' });
+          var data = { title: title, text: text, files: [file] };
+          if (navigator.canShare && navigator.canShare(data)) {
+            return navigator.share(data);
+          }
+          return navigator.share({ title: title, text: text });
+        })
+        .catch(function (err) {
+          if (err && err.name === 'AbortError') return;
+          return navigator.share({ title: title, text: text });
+        })
+        .catch(afterShareFail);
     });
   });
 })();
