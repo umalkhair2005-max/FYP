@@ -1,9 +1,27 @@
 {% extends "base_dashboard.html" %}
+{% block body_extra_class %} patient-report-body{% endblock %}
 {% block title %}{{ patient.patient_name }}{% endblock %}
 {% block page_heading %}{% if nav == 'reports' %}Full AI report{% else %}Patient detail{% endif %}{% endblock %}
 {% block content %}
 
-<div class="patient-detail-toolbar">
+<header class="print-report-cover" role="region" aria-label="Report summary">
+    <div class="print-report-cover__ribbon">Educational AI · not a medical diagnosis</div>
+    <div class="print-report-cover__brand">Pneumonia AI Lab</div>
+    <p class="print-report-cover__pipeline">DenseNet121 feature extraction · SVM classification · Grad-CAM</p>
+    <h1 class="print-report-cover__title">{% if nav == 'reports' %}Chest X-ray analysis report{% else %}Patient imaging record{% endif %}</h1>
+    <dl class="print-report-cover__grid">
+        <dt>Report ID</dt>
+        <dd>PR-{{ patient.id }}</dd>
+        <dt>Patient</dt>
+        <dd>{{ patient.patient_name }}</dd>
+        <dt>Recorded</dt>
+        <dd>{{ patient.prediction_date or '—' }}</dd>
+        <dt>Classification</dt>
+        <dd><strong>{{ patient.result }}</strong> · {{ '%.2f'|format(patient.confidence) }}% confidence</dd>
+    </dl>
+</header>
+
+<div class="patient-detail-toolbar no-print">
     {% if nav == 'reports' %}
     <a href="{{ url_for('reports_page') }}" class="patient-detail-back">← Back to reports</a>
     {% else %}

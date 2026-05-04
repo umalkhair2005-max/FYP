@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/healthcare-ui.css') }}">
     {% block head_extra %}{% endblock %}
 </head>
-<body class="dash-app-body">
+<body class="dash-app-body{% block body_extra_class %}{% endblock %}">
     <header class="hc-navbar" role="banner">
         <div class="hc-navbar-inner hc-navbar-inner--compact">
             <a href="{{ url_for('dashboard') }}" class="hc-brand" aria-label="Pneumonia AI Lab home">
@@ -21,7 +21,6 @@
                 </span>
             </a>
             <div class="hc-navbar-tools">
-                <a href="{{ url_for('settings_page') }}" class="hc-navbar-settings {% if nav == 'settings' %}is-active{% endif %}">Settings</a>
                 <button type="button" class="btn-icon" id="themeToggle" title="Toggle theme" aria-label="Toggle light and dark theme">◐</button>
                 <div class="hc-profile" id="hcProfile">
                     <button type="button" class="hc-profile-btn" id="hcProfileBtn">
