@@ -7,12 +7,13 @@
   if (!input || !send || !messages || !suggestionsEl) return;
 
   var welcomeText =
-    "Online assistant is ready. Ask in English. Use the chips below. If a reply fails, check internet and your API key.";
+    "Assistant ready (internet + API key). You can type in English or Roman Urdu (Latin letters). Replies will match your language. Use chips below.";
 
   var defaultChips = [
     "What is today's date?",
-    "What should a patient with pneumonia do in general?",
+    "Pneumonia kya hota hai?",
     "What are common pneumonia symptoms?",
+    "Roman Urdu mein bata dein: Grad-CAM kya hai?",
   ];
 
   function appendBubble(text, who) {
