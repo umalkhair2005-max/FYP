@@ -11,9 +11,9 @@
 
   var defaultChips = [
     "What is today's date?",
-    "Pneumonia kya hota hai?",
+    "Aaj ki date kya hai?",
+    "Aaj konsa din hai?",
     "What are common pneumonia symptoms?",
-    "Roman Urdu mein bata dein: Grad-CAM kya hai?",
   ];
 
   function appendBubble(text, who) {
@@ -67,16 +67,98 @@
       });
   }
 
+  /** Same intent rules as backend _is_clock_related_question (must stay in sync). */
+  function matchClockIntent(raw) {
+    var m = raw.trim().toLowerCase();
+    if (!m) return null;
+
+    var asksDate =
+      /\b(today'?s date|todays date|what is today'?s date|date today|what'?s the date|whats the date|what date(\s+is it)?|current date)\b/.test(
+        m,
+      ) || /\b(?:aaj|aj)\s+ki\s+(?:date|tareekh|tarikh)\b/.test(m);
+
+    var asksDay =
+      /\b(what day(\s+is it)?|which day(\s+is it)?|day is it|day today)\b/.test(m) ||
+      /\b(?:aaj|aj)\s+konsa\s+din\b/.test(m) ||
+      /\b(?:aaj|aj)\s+kaun\s+sa\s+din\b/.test(m) ||
+      /\b(?:aaj|aj)\s+din\s+(?:kya|hai|hay)\b/.test(m);
+
+    var asksTime =
+      /\b(current time|what'?s the time|what time(\s+is it)?|time now|waqt|kitne baje|abhi kya time)\b/.test(m);
+
+    if (!asksDate && !asksDay && !asksTime) return null;
+    return { asksDate: asksDate, asksDay: asksDay, asksTime: asksTime };
+  }
+
+  function isClockRelatedQuestion(text) {
+    return matchClockIntent(text) !== null;
+  }
+
+  function isRomanUrduClockStyle(raw) {
+    var m = raw.trim().toLowerCase();
+    return /\b(aaj|aj|tareekh|tarikh|waqt|kya|hai|hay|konsa|kab|din|kaun|baje)\b/.test(m);
+  }
+
+  /**
+   * Browser clock via new Date() — never hardcoded. en-US formatting for calendar parts (example: May 9, 2026).
+   */
+  function buildClientClockReply(originalText) {
+    var intent = matchClockIntent(originalText);
+    if (!intent) return null;
+
+    var now = new Date();
+    var dateEnUs = now.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    var weekdayEn = now.toLocaleDateString("en-US", { weekday: "long" });
+    var timeEnUs = now.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+    var roman = isRomanUrduClockStyle(originalText);
+    var parts = [];
+
+    if (roman) {
+      if (intent.asksDate || intent.asksDay) {
+        parts.push("Aaj ki date " + dateEnUs + " hai aur aaj " + weekdayEn + " hai.");
+      }
+      if (intent.asksTime) {
+        if (intent.asksDate || intent.asksDay) {
+          parts.push("Waqt abhi " + timeEnUs + " hai.");
+        } else {
+          parts.push("Abhi waqt " + timeEnUs + " hai.");
+        }
+      }
+      return parts.join(" ");
+    }
+
+    if (intent.asksDate || intent.asksDay) {
+      parts.push("Today's date is " + dateEnUs + ", and today is " + weekdayEn + ".");
+    }
+    if (intent.asksTime) {
+      parts.push("Your browser's local time is " + timeEnUs + ".");
+    }
+    return parts.join(" ");
+  }
+
   function sendMessage() {
     var t = input.value.trim();
     if (!t) return;
     appendBubble(t, "user");
     input.value = "";
     send.disabled = true;
+    var payload = { message: t };
+    if (isClockRelatedQuestion(t)) {
+      var clockAnswer = buildClientClockReply(t);
+      if (clockAnswer) payload.client_clock_answer = clockAnswer;
+    }
     fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: t }),
+      body: JSON.stringify(payload),
     })
       .then(function (r) {
         return r.json().then(function (data) {

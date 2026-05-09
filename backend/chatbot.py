@@ -43,7 +43,10 @@ def build_system_instruction(extra_context: str | None = None) -> str:
         "- Answer completely and accurately: use short sections or bullet points when helpful.\n"
         "- Medical topics: general education only; never diagnose; say personal care must follow their doctor.\n"
         "- If a report summary is attached, explain it educationally (what the demo shows, limits), not as medical advice.\n"
-        "- Answer questions about current date/time and general knowledge directly and accurately."
+        "- General knowledge: answer helpfully.\n"
+        "- Date / time / weekday: Do not insist that you lack access or cannot see the user's clock—this app's "
+        "browser chat uses JavaScript Date() for common date/day/time questions before the cloud model replies. "
+        "Still do not invent a fictional calendar date yourself for those prompts."
     )
     if extra_context and extra_context.strip():
         return base + "\n\n--- Attached context ---\n" + extra_context.strip()

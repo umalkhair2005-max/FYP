@@ -729,6 +729,36 @@ def _llm_configured() -> bool:
     return False
 
 
+def _is_clock_related_question(message: str) -> bool:
+    """True if the client's JS sends client_clock_answer (browser clock). Mirrors assistant_chat.js intent."""
+    m = (message or "").strip().lower()
+    if not m:
+        return False
+
+    asks_date = bool(
+        re.search(
+            r"\b(today'?s date|todays date|what is today'?s date|date today|what'?s the date|"
+            r"whats the date|what date(\s+is it)?|current date)\b",
+            m,
+        )
+        or re.search(r"\b(?:aaj|aj)\s+ki\s+(?:date|tareekh|tarikh)\b", m)
+    )
+    asks_time = bool(
+        re.search(
+            r"\b(current time|what'?s the time|what time(\s+is it)?|time now|"
+            r"waqt|kitne baje|abhi kya time)\b",
+            m,
+        )
+    )
+    asks_day = bool(
+        re.search(r"\b(what day(\s+is it)?|which day(\s+is it)?|day is it|day today)\b", m)
+        or re.search(r"\b(?:aaj|aj)\s+konsa\s+din\b", m)
+        or re.search(r"\b(?:aaj|aj)\s+kaun\s+sa\s+din\b", m)
+        or re.search(r"\b(?:aaj|aj)\s+din\s+(?:kya|hai|hay)\b", m)
+    )
+    return bool(asks_date or asks_time or asks_day)
+
+
 ASSISTANT_ONLINE_ONLY_MSG = (
     "The AI assistant is online-only. Add GOOGLE_API_KEY (Gemini, recommended), GROQ_API_KEY, or "
     "OPENROUTER_API_KEY to your .env file, keep this computer connected to the internet, install "
@@ -844,15 +874,6 @@ def api_chat_history_clear():
 @app.route("/api/chat", methods=["POST"])
 @login_required
 def api_chat():
-    if not _llm_configured():
-        return jsonify(
-            {
-                "reply": ASSISTANT_ONLINE_ONLY_MSG,
-                "suggestions": [],
-                "code": "no_api_key",
-            }
-        ), 403
-
     user = session.get("user") or ""
     data = request.get_json(silent=True) or {}
     msg = (data.get("message") or "").strip()
@@ -863,6 +884,26 @@ def api_chat():
                 "suggestions": followup_suggestions(False),
             }
         ), 400
+
+    client_clock = (data.get("client_clock_answer") or "").strip()
+    if client_clock and len(client_clock) <= 600 and _is_clock_related_question(msg):
+        db.assistant_chat_append(user, "user", msg)
+        db.assistant_chat_append(user, "assistant", client_clock)
+        return jsonify(
+            {
+                "reply": client_clock,
+                "suggestions": followup_suggestions(False),
+            }
+        )
+
+    if not _llm_configured():
+        return jsonify(
+            {
+                "reply": ASSISTANT_ONLINE_ONLY_MSG,
+                "suggestions": [],
+                "code": "no_api_key",
+            }
+        ), 403
 
     pid = data.get("patient_id")
     patient_id: int | None = None
