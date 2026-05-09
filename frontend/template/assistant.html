@@ -25,13 +25,33 @@
 {% else %}
 <div class="assistant-chat-card">
     <div class="assistant-chat-header">
-        <span>Conversation</span>
+        <span class="assistant-chat-header-title">Conversation</span>
+        <label class="assistant-auto-speak-label" title="Har naye jawab ko bol kar sunayen">
+            <input type="checkbox" id="assistantAutoSpeak" aria-describedby="assistantAutoSpeakHint" />
+            <span>Jawab voice mein sunen</span>
+        </label>
+        <span id="assistantAutoSpeakHint" class="sr-only">Jab on ho, har naya assistant reply automatically speak hoga.</span>
         <button type="button" class="assistant-clear-btn" id="assistantClear" title="Clear saved messages">Clear</button>
     </div>
     <div class="assistant-messages" id="assistantMessages" role="log" aria-live="polite" aria-relevant="additions"></div>
     <div class="assistant-suggestions" id="assistantSuggestions" aria-label="Suggested prompts"></div>
     <div class="assistant-input-row">
+        <button type="button" id="assistantMic" class="assistant-voice-btn" title="Bol kar likhein (voice)" aria-label="Start voice input" aria-pressed="false">
+            🎤
+        </button>
+        <label class="assistant-voice-lang-label" title="Recognition language">
+            <span class="sr-only">Speech language</span>
+            <select id="assistantVoiceLang" class="assistant-voice-lang-select" aria-label="Speech recognition language">
+                <option value="auto">Auto</option>
+                <option value="en-US">English</option>
+                <option value="ur-PK">Urdu</option>
+                <option value="hi-IN">Hindi</option>
+            </select>
+        </label>
         <input type="text" id="assistantInput" placeholder="English ya Roman Urdu mein likhein…" autocomplete="off" aria-label="Message to assistant">
+        <button type="button" id="assistantSpeakLast" class="assistant-voice-btn" title="Aakhri jawab sunen (read aloud)" aria-label="Read last assistant reply aloud">
+            🔊
+        </button>
         <button type="button" id="assistantSend" class="assistant-send-btn">Send</button>
     </div>
 </div>
