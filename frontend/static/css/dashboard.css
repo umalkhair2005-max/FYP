@@ -589,23 +589,29 @@ html[data-theme="light"] .dashboard-footnote {
 
 /* Light theme — full shell (dashboard) */
 html[data-theme="light"] {
-  --dash-bg: #f1f5f9;
+  --dash-bg: #eef3fb;
   --dash-surface: #ffffff;
-  --dash-border: #e2e8f0;
+  --dash-border: #d7e0ee;
   --dash-text: #0f172a;
-  --dash-muted: #64748b;
-  --dash-accent: #0284c7;
+  --dash-muted: #5d6f88;
+  --dash-accent: #0b7fc2;
+  --dash-glow: rgba(14, 116, 212, 0.12);
 }
 
 html[data-theme="light"] .app-shell {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 35%, #f1f5f9 100%);
+  background:
+    radial-gradient(circle at 4% -12%, rgba(37, 99, 235, 0.08), transparent 30%),
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.1), transparent 34%),
+    linear-gradient(180deg, #fcfdff 0%, #f4f8ff 40%, #edf3fb 100%);
   color: var(--dash-text);
 }
 
 html[data-theme="light"] .dash-sidebar {
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
   border-right: 1px solid var(--dash-border);
-  box-shadow: 4px 0 32px rgba(15, 23, 42, 0.04);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+    8px 0 32px rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="light"] .dash-nav a {
@@ -618,11 +624,12 @@ html[data-theme="light"] .dash-nav a:hover {
 }
 
 html[data-theme="light"] .dash-nav a.is-active {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(241, 245, 249, 0.95));
-  color: #0369a1;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(255, 255, 255, 0.98));
+  color: #075985;
   box-shadow:
-    inset 3px 0 0 #0284c7,
-    0 0 0 1px rgba(14, 165, 233, 0.18);
+    inset 3px 0 0 #0b7fc2,
+    0 0 0 1px rgba(14, 165, 233, 0.25),
+    0 8px 20px rgba(14, 116, 212, 0.1);
 }
 
 html[data-theme="light"] .dash-nav a.dash-nav-logout {
@@ -630,11 +637,13 @@ html[data-theme="light"] .dash-nav a.dash-nav-logout {
 }
 
 html[data-theme="light"] .dash-topbar {
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--dash-border);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .dash-topbar h1 {
@@ -642,9 +651,11 @@ html[data-theme="light"] .dash-topbar h1 {
 }
 
 html[data-theme="light"] .dash-topbar-cluster {
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
   border: 1px solid #d8e0eb;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.06),
+    0 10px 22px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .dash-topbar-divider {
@@ -661,7 +672,7 @@ html[data-theme="light"] .dash-user strong {
 
 html[data-theme="light"] .btn-icon {
   border-color: #d1dae6;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5fb 100%);
   color: #475569;
 }
 
@@ -674,7 +685,9 @@ html[data-theme="light"] .btn-icon:hover {
 html[data-theme="light"] .btn-primary-dash {
   background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 52%, #7c3aed 100%);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
+  box-shadow:
+    0 8px 22px rgba(14, 165, 233, 0.35),
+    0 12px 32px rgba(124, 58, 237, 0.18);
 }
 
 html[data-theme="light"] .btn-primary-dash:hover {
@@ -702,11 +715,11 @@ html[data-theme="light"] .pagination a:hover {
 html[data-theme="light"] .stat-card,
 html[data-theme="light"] .chart-card,
 html[data-theme="light"] .table-wrap {
-  background: var(--dash-surface);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   border: 1px solid var(--dash-border);
   box-shadow:
-    0 1px 3px rgba(15, 23, 42, 0.04),
-    0 12px 40px rgba(15, 23, 42, 0.06);
+    0 1px 3px rgba(15, 23, 42, 0.05),
+    0 12px 34px rgba(15, 23, 42, 0.07);
 }
 
 html[data-theme="light"] .chart-card h3 {
@@ -803,9 +816,11 @@ html[data-theme="light"] .assistant-setup-note a {
 }
 
 html[data-theme="light"] .assistant-chat-card {
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   border-color: #e2e8f0;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  box-shadow:
+    0 8px 26px rgba(15, 23, 42, 0.07),
+    0 0 0 1px rgba(255, 255, 255, 0.75) inset;
 }
 
 html[data-theme="light"] .assistant-chat-header {
@@ -936,11 +951,11 @@ html[data-theme="light"] .detection-lead {
 }
 
 html[data-theme="light"] .detection-panel.glass-card {
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   border: 1px solid #d8e0eb;
   box-shadow:
-    0 1px 3px rgba(15, 23, 42, 0.04),
-    0 12px 40px rgba(15, 23, 42, 0.07);
+    0 1px 3px rgba(15, 23, 42, 0.05),
+    0 14px 36px rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="light"] .detection-panel-title {
@@ -1540,11 +1555,11 @@ html[data-theme="light"] .settings-intro a {
 }
 
 html[data-theme="light"] .settings-card {
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   border: 1px solid #d8e0eb;
   box-shadow:
-    0 1px 3px rgba(15, 23, 42, 0.04),
-    0 14px 42px rgba(15, 23, 42, 0.07);
+    0 1px 3px rgba(15, 23, 42, 0.05),
+    0 16px 40px rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="light"] .settings-card-title {
