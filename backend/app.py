@@ -95,7 +95,7 @@ DISPLAY_TZ = ZoneInfo(os.environ.get("APP_TIMEZONE", "Asia/Karachi"))
 
 
 def format_local_datetime(iso_str: str | None) -> str:
-    """Convert stored UTC ISO timestamp to local display (default: Pakistan)."""
+    """Convert stored UTC ISO timestamp to local 12-hour display (default: Pakistan)."""
     if not iso_str:
         return "—"
     try:
@@ -105,7 +105,10 @@ def format_local_datetime(iso_str: str | None) -> str:
         dt = datetime.fromisoformat(s)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(DISPLAY_TZ).strftime("%Y-%m-%d %H:%M:%S")
+        local = dt.astimezone(DISPLAY_TZ)
+        h12 = local.hour % 12 or 12
+        ampm = "AM" if local.hour < 12 else "PM"
+        return f"{local.strftime('%Y-%m-%d')} {h12}:{local.strftime('%M')} {ampm}"
     except (ValueError, TypeError):
         return iso_str[:19].replace("T", " ") if iso_str else "—"
 

@@ -408,7 +408,7 @@ html[data-theme="light"] .hc-cm-v {
 .hc-fab {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  bottom: 72px;
   z-index: 500;
   display: flex;
   flex-direction: column;
