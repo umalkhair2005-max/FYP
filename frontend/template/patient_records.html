@@ -3,7 +3,7 @@
 {% block page_heading %}Patient records{% endblock %}
 {% block content %}
 
-<p class="pr-lead">Manage demographic and contact information for every case stored in SQLite. Upload date reflects when the X-ray was analyzed.</p>
+<p class="pr-lead">Manage demographic and contact information for every case stored in SQLite. Date and time reflect when the X-ray was analyzed.</p>
 
 <div class="pr-toolbar">
     <form class="pr-search-form" method="get" action="{{ url_for('patients_list') }}">
@@ -28,7 +28,7 @@
                     <th>Gender</th>
                     <th>Phone</th>
                     <th>Address</th>
-                    <th>Upload date</th>
+                    <th>Date and time</th>
                     <th class="pr-th-actions">Actions</th>
                 </tr>
             </thead>
