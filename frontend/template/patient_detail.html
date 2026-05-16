@@ -15,7 +15,7 @@
         <dt>Patient</dt>
         <dd>{{ patient.patient_name }}</dd>
         <dt>Recorded</dt>
-        <dd>{{ patient.prediction_date or '—' }}</dd>
+        <dd>{{ patient.prediction_date|local_dt }}</dd>
         <dt>Classification</dt>
         <dd><strong>{{ patient.result }}</strong> · {{ '%.2f'|format(patient.confidence) }}% confidence</dd>
     </dl>
@@ -44,7 +44,7 @@
         <strong>Gender:</strong> {{ patient.gender or '—' }} ·
         <strong>Phone:</strong> {{ patient.phone or '—' }}<br>
         <strong>Address:</strong> {{ patient.address or '—' }}<br>
-        <strong>Date:</strong> {{ patient.prediction_date }}
+        <strong>Date:</strong> {{ patient.prediction_date|local_dt }}
     </p>
     <p style="margin-top:12px;">
         <span class="badge {% if patient.result == 'PNEUMONIA' %}badge-warn{% else %}badge-ok{% endif %}">{{ patient.result }}</span>

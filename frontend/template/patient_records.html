@@ -27,6 +27,7 @@
                     <th>Age</th>
                     <th>Gender</th>
                     <th>Phone</th>
+                    <th>Address</th>
                     <th>Upload date</th>
                     <th class="pr-th-actions">Actions</th>
                 </tr>
@@ -39,7 +40,8 @@
                     <td>{{ row.age if row.age is not none else '—' }}</td>
                     <td>{{ row.gender or '—' }}</td>
                     <td>{{ row.phone or '—' }}</td>
-                    <td class="pr-date">{{ row.prediction_date[:19]|replace('T',' ') if row.prediction_date else '—' }}</td>
+                    <td class="pr-address">{{ row.address or '—' }}</td>
+                    <td class="pr-date">{{ row.prediction_date|local_dt }}</td>
                     <td class="pr-actions">
                         <div class="pr-row-menu">
                             <button type="button" class="pr-menu-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="Actions for {{ row.patient_name|e }}">⋮</button>
@@ -55,7 +57,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" class="pr-empty">No patient records yet. Start with a <a href="{{ url_for('detection') }}">new scan</a>.</td>
+                    <td colspan="8" class="pr-empty">No patient records yet. Start with a <a href="{{ url_for('detection') }}">new scan</a>.</td>
                 </tr>
                 {% endfor %}
             </tbody>

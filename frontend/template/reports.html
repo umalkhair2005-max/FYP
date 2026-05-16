@@ -30,7 +30,7 @@
             <div>
                 <span class="report-card-id">Report PR-{{ r.id }}</span>
                 <h3 class="report-card-name">{{ r.patient_name }}</h3>
-                <p class="report-card-meta">{{ r.prediction_date[:19]|replace('T',' ') if r.prediction_date else '—' }}</p>
+                <p class="report-card-meta">{{ r.prediction_date|local_dt }}</p>
             </div>
             <span class="badge {% if r.result == 'PNEUMONIA' %}badge-warn{% else %}badge-ok{% endif %}">{{ r.result }}</span>
         </div>

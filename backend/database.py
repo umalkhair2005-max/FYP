@@ -324,7 +324,7 @@ def list_patients_for_export(created_by: Optional[str] = None) -> list[dict]:
         if created_by is not None and str(created_by).strip():
             rows = conn.execute(
                 """
-                SELECT id, patient_name, age, gender, phone, result, confidence,
+                SELECT id, patient_name, age, gender, phone, address, result, confidence,
                        prediction_date, created_by_user
                 FROM patients
                 WHERE created_by_user = ?
@@ -335,7 +335,7 @@ def list_patients_for_export(created_by: Optional[str] = None) -> list[dict]:
         else:
             rows = conn.execute(
                 """
-                SELECT id, patient_name, age, gender, phone, result, confidence,
+                SELECT id, patient_name, age, gender, phone, address, result, confidence,
                        prediction_date, created_by_user
                 FROM patients
                 ORDER BY prediction_date DESC

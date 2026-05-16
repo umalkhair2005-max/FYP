@@ -881,6 +881,15 @@ html[data-theme="light"] .hc-fab-main {
   color: #94a3b8;
 }
 
+.pr-address {
+  max-width: 12rem;
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .pr-actions {
   white-space: nowrap;
 }

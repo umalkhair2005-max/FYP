@@ -8,7 +8,8 @@ import threading
 import time
 import webbrowser
 from functools import wraps
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -89,6 +90,30 @@ app = Flask(
 )
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersecretkey-change-in-production")
+
+DISPLAY_TZ = ZoneInfo(os.environ.get("APP_TIMEZONE", "Asia/Karachi"))
+
+
+def format_local_datetime(iso_str: str | None) -> str:
+    """Convert stored UTC ISO timestamp to local display (default: Pakistan)."""
+    if not iso_str:
+        return "—"
+    try:
+        s = iso_str.strip()
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(DISPLAY_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        return iso_str[:19].replace("T", " ") if iso_str else "—"
+
+
+@app.template_filter("local_dt")
+def _local_dt_filter(iso_str):
+    return format_local_datetime(iso_str)
+
 
 UPLOAD_FOLDER = os.path.join(app.static_folder, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -569,6 +594,7 @@ def export_patients_csv():
             "Age",
             "Gender",
             "Phone",
+            "Address",
             "Result",
             "Confidence_pct",
             "Prediction_date",
@@ -584,9 +610,10 @@ def export_patients_csv():
                 r.get("age"),
                 r.get("gender"),
                 r.get("phone"),
+                r.get("address"),
                 r.get("result"),
                 r.get("confidence"),
-                r.get("prediction_date"),
+                format_local_datetime(r.get("prediction_date")),
                 r.get("created_by_user"),
             ]
         )
@@ -704,7 +731,7 @@ def _patient_context_block(user: str, patient_id: int | None) -> str:
     result = r.get("result") or "—"
     conf = r.get("confidence")
     conf_s = f"{float(conf):.1f}%" if conf is not None else "—"
-    date_s = r.get("prediction_date") or "—"
+    date_s = format_local_datetime(r.get("prediction_date"))
     desc = (r.get("description") or "").strip()
     if len(desc) > 800:
         desc = desc[:800] + "…"
